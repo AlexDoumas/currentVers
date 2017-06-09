@@ -1,0 +1,145 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf470
+\cocoascreenfonts1{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}
+{\list\listtemplateid2\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid101\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid2}
+{\list\listtemplateid3\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid201\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid3}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}{\listoverride\listid3\listoverridecount0\ls3}}
+\margl1440\margr1440\vieww19580\viewh13640\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 Vers 0.2.3\
+\
+(a) Fixed batch bugs.\
+(b) Changed schematisation routine back to DHS(2008), such that schematisation is licensed whenever all elements in both the driver and recipient that map at all (i.e, have mapping connections above 0.0) also map above threshold. I had previously changed it so that all elements in both driver and recipient had to map above threshold before schematisation was licensed. I had changed it for some work with getting pyDORA to run faster during development. I\'92m not sure whether I\'92ll want to add the functionality back (i.e., make it a parameter in the model that allows either kind of licensing rule). \
+(c) Fixed a bug in schematisation such that higher-level tokens could be schematised without their constituent lower-level tokens being schematised (e.g., you could schematise a P unit without schematising its RBs). \
+(d) Fixed bug in relational generalisation so it plays well with new analog format. \
+(e) Fixed a bug I\'92d never noticed before that caused hanging when running retrieval in LISA mode with only POs in memory. \
+(f) Fixed a bug in \'93ignore_object_semantics\'94 that caused the network not to register when a user had changed the value of the \'93ignore_object_semantics\'94 parameter during user controlled run. \
+\
+Need to:
+\b \
+\pard\tx220\tx720\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\li720\fi-720\pardirnatural\partightenfactor0
+\ls1\ilvl0\cf0 {\listtext	\'95	}There is an issue with schematisation as it stands that is theoretically wrong: If you map a structure with RBs and no Ps, and that maps to a structure with Ps and RBs, you\'92ll infer a schema without Ps. Is that right? I don\'92t think so. You might want to rethink a couple of points: (1) Should you be schematising at all after you infer a new P? (2) If you map a structure with RBs and no P to a structure with Ps and RBs, maybe you schematise the P also Or just if the P is in the recipient? Or just the driver? Think about it. NOTE: This issue is addressed in part by fixing the bug noted in (c) above. I\'92m not sure you\'92ll need to do anything else. 
+\b0 \
+{\listtext	\'95	}Get groups up and running. \
+{\listtext	\'95	}Implement entropy based comparator. \
+{\listtext	\'95	}Generalisation routine does not seems to link generalised structures into the structures they are generalised around. That is, if you generalise a new RB in the recipient, it doesn\'92t appear to link to the active P unit that it should be part of. Why? \
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+\cf0 \
+Vers 0.2.2\
+\
+(a) Improved routines to save network state. Rather than pickle, DORA now writes the network state to a sym file, which can be reloaded to return DORA to the proper state. \
+\
+(b) Several bug fixes to DORA\'92s run operations, including retrieval, predication, form_new_relation, and schematisation. \
+\
+Vers0.2.1.1\
+\
+(a) Fixed copy from memory to active memory (AM). Implemented both DHS(2008) directly move the item from memory into AM, and exemplar-based make a copy of the memory item and add that to AM. \
+\
+(b) Fixed some indexing problems in predication routine and in learning new relations routines, arising from changes in analog structure arising from new copy machine (see (a) above). \
+\
+(c) Fixed bug in DORA_GUI.term_network_display() function that caused the routine to produce a crash (bad string concatenation), and a bug that kept lone POs from printing (I forgot to actually execute the print command on the string representing the PO). \
+\
+FIXED LIST:\
+\
+There was an incredibly stupid error in the lateral inhibition function for recipient items wherein POs inhibited other POs of there type only (i.e., objects inhibited only other objects and press inhibited only other preds). I fixed the problem but left the bad code in and commented out (as I have no idea why I\'92d implement something so stupid and I\'92m scared I did it as a kludge for some problem that I\'92ve forgotten about. \
+\
+PROBLEMS:\
+\
+\pard\tx220\tx720\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\li720\fi-720\pardirnatural\partightenfactor0
+\ls2\ilvl0\cf0 {\listtext	\'95	}There is something wrong with the way that semantic links are created. POs are connected to semantics that they shouldn\'92t be (in the recipient for sure, maybe in the driver and memory as well). \{
+\b NOTE: I can\'92t get this error to repeat in more current versions. I don\'92t know what gave rise to it initially.
+\b0 \} \
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+\cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf0 Vers0.2\
+\
+Added menus for terminal.\
+Started implementation of groups for 0.3.\
+Many bug fixes.\
+Created a runDORA object to replace runDORA function.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 PROBLEMS:\
+\
+\pard\tx220\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li720\fi-720\pardirnatural\partightenfactor0
+\ls3\ilvl0\cf0 {\listtext	\'95	}\strike \strikec0 Must update DORA menus for new runDORA object.\strike0\striked0  -- 
+\b FIXED (I think).
+\b0 \
+{\listtext	\'95	}\strike \strikec0 During retrieval with relations that are arguments of higher-order relations you get problems. The reason for the problem is noted in basicRunDORA line 894. 
+\b \strike0\striked0 \'97FIXED.
+\b0 \strike \strikec0 \
+{\listtext	\'95	}After retrieval, sometimes the POs in the recipient will not get active (WHY???). Seems to only happen when there are lower order units in driver and recipient. Retrieval seems to mess with unit activations and inhibitors. (
+\b I think this might be fixed.
+\b0 ) \strike0\striked0  
+\b \'97FIXED.
+\b0 \strike \strikec0 \
+{\listtext	\'95	}Another wonky retrieval problem is that parts of propositions well get retrieved. Basically, retrieval needs a MAJOR overhaul. (
+\b I think this might be fixed.
+\b0 )\strike0\striked0 \
+{\listtext	\'95	}During schematization in LISA mode sometimes RB will form that have no Object or Child P (i.e., they only have a pred). I don't know why this is. I can\'92t get this error to replicate consistently. I have added a debugging catch in case it happens again. I also changed the licensing for schematization such that it is only licensed if all tokens in both driver and recipient map. I did so to keep schema formation from running too frequently during the rest of development. I\'92ll want to change it back in the future. \
+{\listtext	\'95	}\strike \strikec0 There is a problem with normalization of mapping hypotheses during update of mapping connections\strike0\striked0 . 
+\b -- FIXED
+\b0 .\
+{\listtext	\'95	}There is something wrong with the way semantic units normalize their input. I have NOT fixed the problem with semantic normalization. (I'm not actually sure there is a problem.)\
+{\listtext	\'95	}\strike \strikec0 A problem (that I don't necessarily have the solution for) is that if you have an token in memory that is shared by several propositions in the same analog, then retrieving one proposition from that analog into driver and another into recipient means the shared token doesn't know where to go (driver or recipient). Perhaps the solution is to have analog level retrieval. Another solution is to make copies of the tokens in driver and recipient, then put them back into memory. I don't actually like the later solution, though.\strike0\striked0   
+\b \'97FIXED.
+\b0 \
+{\listtext	\'95	}\strike \strikec0 During schematization, if there is anything at all in driver or recipient that does not map, then schematization will not run. You just need to make sure than any schematization will work for anything that maps to anything. Basically, you should just run all mapped items in the driver and let schematization happen.\strike0\striked0  
+\b \'97FIXED.
+\b0 \
+{\listtext	\'95	}\strike \strikec0 During the clearing of memory during DORA run, somehow the memory gets deleted. I don't know why this is.  \strike0\striked0 --
+\b FIXED
+\b0 .\
+{\listtext	\'95	}\strike \strikec0 basicRunDORA.reset_mappings seems to delete the entire memory \strike0\striked0 --
+\b FIXED
+\b0 .\strike \strikec0 \
+\ls3\ilvl0\strike0\striked0 {\listtext	\'95	}\strike \strikec0 Schematization creates some pretty odd results because you have NO check for whether schematization should be allowed (all items in driver map to something in recipient (or vise-versa).\strike0\striked0  -- 
+\b FIXED
+\b0 .\
+{\listtext	\'95	}\strike \strikec0 DURING MAPPING OBJECTS IN THE RECIPIENT DON'T BECOME ACTIVE, PREDS DOMINATE FIRING. WHY?\strike0\striked0  -- 
+\b FIXED
+\b0 : PO inhibitors in recipient where not firing (code line was commented out).\
+{\listtext	\'95	}\strike \strikec0 Schematization for higher-order relations seems broken. Check what happens when you schematize two knows(x,P) analogs. I think the problem is due to the fact that RBs are firing randomly. I fixed the problem with RBs firing at random during schematization (now they fire randomly within P units (or RBs if no Ps, POs if no RBs).\strike0\striked0  -- 
+\b FIXED
+\b0 .\
+{\listtext	\'95	}\strike \strikec0 During schematization, the first PO in newSet continuously loses connection weights to it's semantics while other POs are being inferred. Why? You need to run from the python terminal to check what's wrong here. Problem was that calculation of most active unit for POs was wonky\strike0\striked0  -- 
+\b FIXED
+\b0 .\
+{\listtext	\'95	}\strike \strikec0 There is something wrong with object POs firing during LISA mode. Object POs don't seem to ever get active. Why are they so strongly inhibited. The problem is that object POs are getting an extraordinary amount of mapping inhibition from Preds in the driver (notice they should be getting no input from driver Preds!!!!!)\strike0\striked0 . 
+\b -- FIXED.
+\b0  \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf0 \
+Vers0.1.1.3.2\
+\
+Added code to allow the run_on_iphone parameter to keep any pygame functions from being imported to allow the model to run on iphone. (Currently this parameter needs to be set twice (once in DORA_GUI and once in basicRunDORA). It would be nice if I could have it set only once.)\
+Need to debug retrieval routine. (I think this step is done.)\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf0 \strike \strikec0 I should try to address Problem1 from 0.1.1.3.1.\strike0\striked0 \
+I should try to address Problem1 from 0.1.1.3.\
+\
+Vers0.1.1.3.1\
+\
+Fixed of Problem2 from 0.1.1.3 with schematization from 0.1.1.3.\
+Fixed Problem3 from 0.1.1.3 of POs in driver during off half-way through RB firing.\
+Wrote first version of retrieval routine.\
+\strike \strikec0 PROBLEM1: During async binding, POs and Ps in child don't inhibit one another.\strike0\striked0 \
+\
+Vers0.1.1.3\
+Inference routine and draw new nodes in DORA_GUI fixed.\
+PROBLEM1: Newly drawn nodes in GUI can extend outside of the rectangle allotted for those nodes. For example, the rectangle for recipient POs holds 12 POs as sized by default. If a 13th is drawn, it is drawn outside the rectangle because the current nodes do not resize. This is a cosmetic issue that doesn't come up a lot, but you'll want to fix it in the future.\
+\strike \strikec0 PROBLEM2: During schematization, newSet units learn connections both to newSet units and driver units.\
+PROBLEM3: During synchrony mode, the POs in the driver are becoming inhibited half-way throughout an RB firing because they are accumulating activation as they would in asynchrony mode. You have to figure out where the excess inhibition is coming from and turn it off for synchrony mode.\strike0\striked0 \
+\
+Vers0.1.1.2\
+Wrote buggy inference routine.\
+Noticed a problem with drawing new GUI_nodes during inference. Problem is in DORA_GUI code.\
+\
+Vers0.1.1.1\
+Updated GUI to run directly from runDORA code for better handling of pauses.\
+\
+}
