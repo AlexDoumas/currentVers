@@ -5,8 +5,7 @@
 
 # imports.
 import dataTypes
-import operator
-import pdb
+import operator, random, pdb
 
 # function to calculate over-all same/diff from entropy.
 def ent_overall_same_diff(semantic_array):
@@ -187,6 +186,192 @@ def ent_magnitudeMoreLessSame(extent1, extent2):
         same_flag = True
     # return more, less, a flag indicating whether the values are the same (called same_flag), and the number of iterations to settling.
     return more, less, same_flag, iterations
+
+# function to learn basic magnitude comparison circuit that will support the output of the ent_magnitudeMoreLessSame() function. It takes as input the number of learning trials you want to give it. 
+def learn_mag_circuit(learning_trials):
+    # build the initial network. This network consists of a unit marking PO units settling, three time-in-comparison-cycle units (two connected to the unit makring PO settling, the other a gating unit connected to the PO units and active when both POs are active), and three MLS semantics (just semantic units randomly connected to the time-in-comparison-cycle units that will come to code invariant "more", "less", and "same" after learning). 
+    settling_unit = dataTypes.basicTimingNode('settling', [], [], [])
+    time_unit1, time_unit2 = dataTypes.basicTimingNode('A', [], [], []), dataTypes.basicTimingNode('B', [], [], [])
+    time_unit3 = dataTypes.basicGateNode('gate', [], [])
+    Local_inhib = dataTypes.localInhibitor()
+    semantic1, semantic2, semantic3 = dataTypes.MLS_sem('semantic1', [], [], []), dataTypes.MLS_sem('semantic2', [], [], []), dataTypes.MLS_sem('semantic3', [], [], [])
+    # set a POs flag indicating whether both POs are active after settling (to be used in learning magnitude vs. sameness; 1.0==both POs active after settling, 0.0==only one PO is active after settling). 
+    POs = 0.0
+    # create links between settling unit and timing units. Weights are random values between .5 and 1. 
+    link1 = dataTypes.basicLink(settling_unit, time_unit1, 0.8)
+    settling_unit.lower_connections.append(link1)
+    time_unit1.higher_connections.append(link1)
+    link2 = dataTypes.basicLink(settling_unit, time_unit2, 0.5)
+    settling_unit.lower_connections.append(link2)
+    time_unit2.higher_connections.append(link2)
+    time_unit3.input_nodes.append(POs)
+    # create links between timing units and semantics. 
+    link3, link4, link5 = dataTypes.basicLink(time_unit1, semantic1, .5), dataTypes.basicLink(time_unit1, semantic2, .2), dataTypes.basicLink(time_unit1, semantic3, .2)
+    time_unit1.lower_connections.append(link3)
+    time_unit1.lower_connections.append(link4)
+    time_unit1.lower_connections.append(link5)
+    semantic1.higher_connections.append(link3)
+    semantic2.higher_connections.append(link4)
+    semantic3.higher_connections.append(link5)
+    link6, link7, link8 = dataTypes.basicLink(time_unit2, semantic1, .2), dataTypes.basicLink(time_unit2, semantic2, .5), dataTypes.basicLink(time_unit2, semantic3, .2)
+    time_unit2.lower_connections.append(link6)
+    time_unit2.lower_connections.append(link7)
+    time_unit2.lower_connections.append(link8)
+    semantic1.higher_connections.append(link6)
+    semantic2.higher_connections.append(link7)
+    semantic3.higher_connections.append(link8)
+    link9, link10, link11 = dataTypes.basicLink(time_unit3, semantic1, .2), dataTypes.basicLink(time_unit3, semantic2, .2), dataTypes.basicLink(time_unit3, semantic3, .5)
+    time_unit3.output_nodes.append(link9)
+    time_unit3.output_nodes.append(link10)
+    time_unit3.output_nodes.append(link11)
+    semantic1.higher_connections.append(link9)
+    semantic2.higher_connections.append(link10)
+    semantic3.higher_connections.append(link11)
+    # finally, set up lateral connections. These are not established by links, but rather any nodes in the same layer are placed in one-another's .lateral_connections field. Timing units and MLS semantics are all laterally inhibitory. 
+    time_unit1.lateral_connections.append(time_unit2)
+    time_unit1.lateral_connections.append(time_unit3)
+    time_unit2.lateral_connections.append(time_unit1)
+    time_unit2.lateral_connections.append(time_unit3)
+    semantic1.lateral_connections.append(semantic2)
+    semantic1.lateral_connections.append(semantic3)
+    semantic2.lateral_connections.append(semantic1)
+    semantic2.lateral_connections.append(semantic3)
+    semantic3.lateral_connections.append(semantic1)
+    semantic3.lateral_connections.append(semantic2)
+    # put the units in arrays. 
+    time_units = [time_unit1, time_unit2]
+    gate_units = [time_unit3]
+    MLS_semantics = [semantic1, semantic2, semantic3]
+    # set gamma and delta for leaky integrator activation function. 
+    gamma, delta = 0.3, 0.1
+    # start the training process. 
+    for train_instance in range(learning_trials):
+        # is this a trial when both POs are active or not? 
+        rand_num = random.random()
+        if rand_num > .5:
+            same_flag = False
+            gate_units[0].input_nodes[0] = 0.0
+        else:
+            same_flag = True
+            gate_units[0].input_nodes[0] = 1.0
+        # activate unit indicating settling. 
+        settling_unit.act = 1.0
+        # for n iterations, until the LI fires, run the network. 
+        for iteration in range(110):
+            # three units (marking time-in-comparison-cycle) compete to become active. 
+            # update the input of time-in-cycle and semantic units. 
+            for unit in time_units:
+                unit.update_input()
+            for unit in gate_units:
+                unit.update_input()
+            for unit in MLS_semantics:
+                unit.update_input()
+            # get max_sem_input. 
+            max_sem_input = 0.0
+            for semantic in MLS_semantics:
+                if semantic.input > max_sem_input:
+                    max_sem_input = semantic.input
+            # subtractive normalisation. 
+            for semantic in MLS_semantics:
+                if semantic.input < max_sem_input:
+                    semantic.input -= max_sem_input
+            # then updat max_sem_input for divisive normalisation. 
+            for semantic in MLS_semantics:
+                semantic.set_max_sem_input(max_sem_input)
+            # update the activation and clear the input of time-in-cycle and semantic units. 
+            for unit in time_units:
+                unit.update_act(gamma, delta)
+                print 'input = ', str(unit.input), '\tact = ', str(unit.act), '\n'
+                unit.clear_input()
+            for unit in gate_units:
+                unit.update_act()
+                unit.clear_input()
+            for unit in MLS_semantics:
+                unit.update_act()
+                print unit.name, ' ', str(unit.act)
+                unit.clear_input()
+            # update weights from time-in-comparison-cycle units to MLS semantics if iteration >= 3. 
+            if iteration >= 3:
+                for unit in time_units:
+                    unit.adjust_links()
+                for unit in gate_units:
+                    unit.adjust_links()
+        # after n iterations, if same_flag is False, then fire the local inhibitor, which inhibits time-in-comparison-cycle units and MLS semantics. 
+        if not same_flag:
+            active_unit = None
+            max_act = 0.0
+            for unit in time_units:
+                if unit.act > max_act:
+                    active_unit = unit
+            active_unit.time_since_fired = 1
+        for unit in time_units:
+            unit.clear_inputandact()
+        for semantic in MLS_semantics:
+            semantic.clear_all()
+        # for n further iterations, run the network. 
+        for iteration in range(110):
+            # three units (marking time-in-comparison-cycle) compete to become active. 
+            # update the input of time-in-cycle and semantic units. 
+            for unit in time_units:
+                unit.update_input()
+            for unit in gate_units:
+                unit.update_input()
+            for unit in MLS_semantics:
+                unit.update_input()
+            # get max sem input. 
+            max_sem_input = 0.0
+            for semantic in MLS_semantics:
+                if semantic.input > max_sem_input:
+                    max_sem_input = semantic.input
+            # subtractive normalisation. 
+            for semantic in MLS_semantics:
+                if semantic.input < max_sem_input:
+                    semantic.input -= max_sem_input
+            # then updat max_sem_input for divisive normalisation. 
+            for semantic in MLS_semantics:
+                semantic.set_max_sem_input(max_sem_input)
+            # update the activation and clear the input of time-in-cycle and semantic units. 
+            for unit in time_units:
+                unit.update_act(gamma, delta)
+                print 'input = ', str(unit.input), '\tact = ', str(unit.act), '\n'
+                unit.clear_input()
+            for unit in gate_units:
+                unit.update_act()
+                unit.clear_input()
+            for unit in MLS_semantics:
+                unit.update_act()
+                print unit.name, ' ', str(unit.act)
+                unit.clear_input()
+            # update weights from time-in-comparison-cycle units to MLS semantics if iteration >= 3. 
+            if iteration >= 3:
+                for unit in time_units:
+                    unit.adjust_links()
+                for unit in gate_units:
+                    unit.adjust_links()
+        # after n iterations, end the learning cycle and clear all units. 
+        for unit in time_units:
+            unit.clear_all()
+        for unit in gate_units:
+            unit.clear_all()
+        for unit in MLS_semantics:
+            unit.clear_all()
+    # END. The semantic unit connected to the time-in-comparison-cycle unit that fires first with activation to the settling unit is the "more" semantic, the semantic unit connected to the time-in-comparison-cycle unit that fires second with activation to the settling unit is the "less" semantic, and the semantic unit connected to the gating time-in-comparison-cycle unit is the "same" semantic. 
+    # print settling unit's connections.
+    for link in settling_unit.lower_connections:
+        print 'Settling unit to ', link.mylowernode.name, ' weight = ', str(link.weight), '\n'
+    print '\n'
+    # print timing units' connections. 
+    for unit in time_units:
+        for link in unit.lower_connections:
+            print unit.name, ' to ', link.mylowernode.name, ' weight = ', str(link.weight), '\n'
+    print '\n'
+    # print gating unit's connections. 
+    for link in gate_units[0].output_nodes:
+        print gate_units[0].name, ' to ', link.mylowernode.name, ' weight = ', str(link.weight), '\n'
+    print '\n'
+
+
+
 
 
 

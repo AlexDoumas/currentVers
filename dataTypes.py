@@ -2,7 +2,7 @@
 # dataType objects for DORA.
 
 # imports.
-import random, pdb
+import random, math, pdb
 
 # set parameters.
 
@@ -495,12 +495,15 @@ class POUnit(TokenUnit):
 
 
 class Semantic(object):
-    def __init__(self, my_name, dimension=None, amount=None, ont_status='state'):
+    def __init__(self, my_name, dimension=None, amount=None, ont_status=None):
         self.name = my_name
         self.my_type = 'semantic'
         self.dimension = dimension # if I code a dimension, which dimension?; else = None.
         self.amount = amount # if I am a metric dimension, my value on that dimension; else = None.
-        self.ont_status = ont_status # what is my ontological status? Am I a 'state' (i.e., an indication of the existence of a property) or a 'value' (i.e., a specific aboslute value on some dimension)? NOTE: comparative semantics like more/less/same/different have ont_status of 'SDM'.
+        if ont_status == None:
+            self.ont_status = 'state'
+        else:
+            self.ont_status = ont_status # what is my ontological status? Am I a 'state' (i.e., an indication of the existence of a property) or a 'value' (i.e., a specific aboslute value on some dimension)? NOTE: comparative semantics like more/less/same/different have ont_status of 'SDM'.
         self.myinput = 0.0
         self.max_sem_input = 0.0 # the maximum input to any semantic unit in the network.
         self.act = 0.0
@@ -836,6 +839,150 @@ class basicEntNode(object):
     def clear_all(self):
         self.input = 0.0
         self.act = 0.0
+
+
+# general node for use in magnitude ciruit. 
+class basicTimingNode(object):
+    def __init__(self, name, higher_connections, lateral_connections, lower_connections):
+        self.name = name
+        self.act = 0.0
+        self.input = 0.0
+        self.time_since_fired = None
+        self.higher_connections = higher_connections
+        self.lateral_connections = lateral_connections
+        self.lower_connections = lower_connections
+    
+    def update_input(self):
+        # initialize input. 
+        self.input = 0.0
+        # for each node to which I am upwardly connected, get input. 
+        for connection in self.higher_connections:
+            self.input += connection.weight * connection.myhighernode.act
+        # for each node to which I am laterally connected, get input. 
+        # REMEMBER: lateral connections aren't links, they are actually just a list of all lateral units as all lateral inputs are inhbitory
+        for unit in self.lateral_connections:
+            self.input += -3.0 * unit.act
+        # for each node to which I am downwardly connected, get input. 
+        for connection in self.lower_connections:
+            self.input += connection.weight * connection.mylowernode.act
+        # and subtract refraction. 
+        if self.time_since_fired is not None:
+            self.input -= 10.0/(1 + (pow(math.e, (self.time_since_fired - 110))))
+    
+    def update_act(self, gamma, delta):
+        # update as a simple leaky integrator unit.
+        delta_act = gamma * self.input * (1.1 - self.act) - (delta*self.act)
+        self.act += delta_act
+        # hard limit activation to between 0.0 and 1.0.
+        if self.act > 1.0:
+            self.act = 1.0
+        if self.act < 0.0:
+            self.act = 0.0
+        # update my time_since_fired field if applicable. 
+        if self.time_since_fired:
+            self.time_since_fired += 1
+    
+    def adjust_links(self):
+        # for all of my links to semantic units (i.e., lower_connections), update weights according to simple Hebbian rule with a growth parameter (=.2). 
+        for link in self.lower_connections:
+            link.weight += self.act*(link.mylowernode.act - link.weight)*.2
+    
+    def clear_input(self):
+        self.input = 0.0
+    
+    def clear_inputandact(self):
+        self.input = 0.0
+        self.act = 0.0
+    
+    def clear_all(self):
+        self.input = 0.0
+        self.act = 0.0
+        self.time_since_fired = None
+
+
+# simple gating node. 
+class basicGateNode(object):
+    def __init__(self, name, input_nodes, output_nodes):
+        self.name = name
+        self.act = 0.0
+        self.input_nodes = input_nodes # nodes that I gate the input from. 
+        self.output_nodes = output_nodes # nodes that I output to. 
+        self.gate = False # my gate is open (True or False). 
+    
+    def update_input(self):
+        go_on = True
+        for unit in self.input_nodes:
+            if unit < 0.1:
+                go_on = False
+        if go_on == True:
+            self.gate = True
+    
+    def update_act(self):
+        if self.gate == True:
+            self.act = 1.0
+            self.gate = False
+        else:
+            self.act = 0.0
+        # set the .gate field to False as you have now fired. 
+        self.gate = False
+    
+    def adjust_links(self):
+        # for all of my links to semantic units (i.e., lower_connections), update weights according to simple Hebbian rule with a growth parameter (=.2).  
+        for link in self.output_nodes:
+            link.weight += self.act*(link.mylowernode.act - link.weight)*.2
+    
+    def clear_input(self):
+        self.gate = False
+    
+    def clear_all(self):
+        self.input = 0.0
+        self.act = 0.0
+        self.time_since_fired = None
+
+
+# MLS semantic for mag cirucuit. 
+class MLS_sem(object):
+    def __init__(self,name, higher_connections, lateral_connections, lower_connections):
+        self.name = name
+        self.act = 0.0
+        self.input = 0.0
+        self.max_sem_input = 0.0
+        self.higher_connections = higher_connections
+        self.lateral_connections = lateral_connections
+        self.lower_connections = lower_connections
+    
+    def update_input(self):
+        # initialise input. 
+        self.input = 0.0
+        # for each node to which I am upwardly connected, get input. 
+        for connection in self.higher_connections:
+            self.input += connection.weight * connection.myhighernode.act
+        # for each node to which I am laterally connected, get input. 
+        # REMEMBER: lateral connections aren't links, they are actually just a list of all lateral units as all lateral inputs are inhbitory
+        #for unit in self.lateral_connections:
+        #    self.input += -1.0 * unit.act
+        # for each node to which I am downwardly connected, get input. 
+        for connection in self.lower_connections:
+            self.input += connection.weight * connection.mylowernode.act
+    
+    def set_max_sem_input(self, max_input):
+        self.max_sem_input = max_input
+    
+    def update_act(self):
+        if self.max_sem_input > 0:
+            self.act = self.input / self.max_sem_input
+        else:
+            self.act = 0.0
+        if self.act < 0:
+            self.act = 0.0
+    
+    def clear_input(self):
+        self.input = 0.0
+    
+    def clear_all(self):
+        self.input = 0.0
+        self.act = 0.0
+        
 
 
 # simple link class for doing basic network computations (e.g., in entropy calculations). These links are uni-directional.
