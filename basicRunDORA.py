@@ -2720,7 +2720,9 @@ def basic_en_based_mag_refinement(myPO, myPO2, memory):
             if len(myPO2_mag_link) > 0:
                 myPO2_mag_link = myPO1_mag_link[0]
             else:
-                more_link = [link for link in memory.Links if link.mySemantic.name == 'more']
+                # create a link to the "more" semantic. 
+                more_semantic = [semantic for semantic in memory.semantics if semantic.name == 'more']
+                more_link = dataTypes.Link(myPO2, [], more_semantic, 1.0)
                 myPO2_mag_link = more_link
             # update the weight to myPO2_mag_link. 
             myPO2_mag_link.weight = 1.0
@@ -2747,7 +2749,9 @@ def basic_en_based_mag_refinement(myPO, myPO2, memory):
             if len(myPO1_mag_link) > 0:
                 myPO1_mag_link = myPO1_mag_link[0]
             else:
-                less_link = [link for link in memory.Links if link.mySemantic.name == 'less']
+                # create a link to the "less" semantic. 
+                less_semantic = [semantic for semantic in memory.semantics if semantic.name == 'less']
+                less_link = dataTypes.Link(myPO, [], less_semantic, 1.0)
                 myPO1_mag_link = less_link
             # update the weight to myPO1_mag_link. 
             myPO1_mag_link.weight = 1.0
