@@ -379,13 +379,10 @@ class runDORA(object):
                 # run basic ent_overall_same_diff() to compute the similarity_ratio between the mapped POs.
                 difference_ratio = ent_overall_same_diff(self.memory.semantics)
                 print difference_ratio
-                
-                #########################################################################################
-                # DIFFERENCE_RATIO IS COMPUTED. NOW, HOW DO YOU WANT TO STORE THIS INFORMATION FOR USE? 
-                #########################################################################################
-                
                 # finally, clear the inputs and activations of all current units.
                 self.memory = initialize_AM(self.memory)
+        # and return difference_ratio. 
+        return difference_ratio
     
     def do_predication(self):
         # you have to be operating asDORA for predication routines, so make sure .asDORA is True while performing predication.
@@ -753,7 +750,7 @@ class runDORA(object):
                                 debug = True
             ###########################################################
             ############### ENTER DEBUGGING DURING RUN! ###############
-            # NOTE: for DEBUGGING, enters set_trace() after a GUI pause.
+            # for DEBUGGING, enters set_trace() after a GUI pause.
             ###########################################################
             if debug:
                 pdb.set_trace()
@@ -2718,7 +2715,13 @@ def basic_en_based_mag_refinement(myPO, myPO2, memory):
                 link.weight /= 2
         else:
             myPO2_other_mags.append(myPO2_mag_link)
-            myPO2_mag_link = [link for link in myPO2_other_mags if link.mySemantic.name == 'less']
+            # see if myPO2 is connected to the "more" semantic, and, if it is not, connect it to the "more" semantic. 
+            myPO2_mag_link = [link for link in myPO2_other_mags if link.mySemantic.name == 'more']
+            if len(myPO2_mag_link) > 0:
+                myPO2_mag_link = myPO1_mag_link[0]
+            else:
+                more_link = [link for link in memory.Links if link.mySemantic.name == 'more']
+                myPO2_mag_link = more_link
             # update the weight to myPO2_mag_link. 
             myPO2_mag_link.weight = 1.0
             # update the weight to other mag_links. 
@@ -2739,7 +2742,13 @@ def basic_en_based_mag_refinement(myPO, myPO2, memory):
                 link.weight /= 2
         else:
             myPO1_other_mags.append(myPO1_mag_link)
+            # see if myPO1 is connected to the "less" semantic, and, if it is not, connect it to the "less" semantic. 
             myPO1_mag_link = [link for link in myPO1_other_mags if link.mySemantic.name == 'less']
+            if len(myPO1_mag_link) > 0:
+                myPO1_mag_link = myPO1_mag_link[0]
+            else:
+                less_link = [link for link in memory.Links if link.mySemantic.name == 'less']
+                myPO1_mag_link = less_link
             # update the weight to myPO1_mag_link. 
             myPO1_mag_link.weight = 1.0
             # update the weight to other mag_links. 

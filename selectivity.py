@@ -208,8 +208,26 @@ for state in num_by_state:
     state_num = num_by_state.index(state)+1
     state_num *= 100
     print str(state_num) + ': ' + str(state)
+# plot the number of POs, RBs, and Ps at each learning interval. 
+# make an array of the POs (the 0th item in each state). 
+# you could use list comp (e.g., [x[0] for x in num_by_state]), but I'm going to play with numpy. 
 
-#.set_trace()
+num_by_state = numpy.array(num_by_state)
+POs = num_by_state[:,0]
+RBs = num_by_state[:,1]
+Ps = num_by_state[:,2]
+x_length = len(num_by_state)
+x = numpy.arange(0,x_length*50, 50)
+POs,=plt.plot(x,POs, 'k.', linewidth=3.0, label='objects')
+RBs,=plt.plot(x,RBs, 'k--', linewidth=3.0, label='single-place predicates')
+Ps,=plt.plot(x,Ps, 'k-', linewidth=3.0, label='whole relations')
+plt.legend([POs, RBs, Ps], ['objects', 'single-place predicates', 'whole relations'])
+plt.xlabel('iteration')
+plt.ylabel('number of representations in LTM')
+# set the range of the axes.
+plt.axis([0,2500,0,700])
+plt.grid(False)
+plt.show()
 
 # calculate the mean sel_met for each memory state.
 # for all props. 
@@ -222,7 +240,7 @@ x_length = len(sel_met_avgs)
 x = numpy.arange(0,x_length*50, 50)
 y = sel_met_avgs
 # draw the lines on the graph.
-DORA,=plt.plot(x,y, 'r--', label='DORA')
+DORA,=plt.plot(x,y, 'k-', label='DORA')
 #plt.legend(handles=[DORA, Humans])
 #plt.axis([-.1,4.5,0,1])
 # label the axes.
