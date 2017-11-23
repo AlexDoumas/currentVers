@@ -1,4 +1,4 @@
-{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf830
+{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf100
 \cocoascreenfonts1{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
 {\*\expandedcolortbl;;}
@@ -17,13 +17,15 @@
 (d) Fixed bug in relational generalisation so it plays well with new analog format. \
 (e) Fixed a bug I\'92d never noticed before that caused hanging when running retrieval in LISA mode with only POs in memory. \
 (f) Fixed a bug in \'93ignore_object_semantics\'94 that caused the network not to register when a user had changed the value of the \'93ignore_object_semantics\'94 parameter during user controlled run. \
+(g) Found and (I think) bug in magnitude refinement wherein two POs that weren\'92t both connected to a magnitude semantic could be refined. I have left a bug catch that enters python debug at line 2711 of basicRunDORA.py. \
+(h) I changed the minimum weight for interesting dimensions from 0.95 to 0.7 in en_based_mag_checks() in basicRunDORA.py (line 2585). I\'92m not sure If I should switch it back, but I note it here in case you want to go back at any point. \
 \
 Need to:
 \b \
 \pard\tx220\tx720\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\li720\fi-720\pardirnatural\partightenfactor0
-\ls1\ilvl0\cf0 {\listtext	\'95	}There is an issue with schematisation as it stands that is theoretically wrong: If you map a structure with RBs and no Ps, and that maps to a structure with Ps and RBs, you\'92ll infer a schema without Ps. Is that right? I don\'92t think so. You might want to rethink a couple of points: (1) Should you be schematising at all after you infer a new P? (2) If you map a structure with RBs and no P to a structure with Ps and RBs, maybe you schematise the P also Or just if the P is in the recipient? Or just the driver? Think about it. NOTE: This issue is addressed in part by fixing the bug noted in (c) above. I\'92m not sure you\'92ll need to do anything else. 
+\ls1\ilvl0\cf0 {\listtext	\uc0\u8226 	}There is an issue with schematisation as it stands that is theoretically wrong: If you map a structure with RBs and no Ps, and that maps to a structure with Ps and RBs, you\'92ll infer a schema without Ps. Is that right? I don\'92t think so. You might want to rethink a couple of points: (1) Should you be schematising at all after you infer a new P? (2) If you map a structure with RBs and no P to a structure with Ps and RBs, maybe you schematise the P also Or just if the P is in the recipient? Or just the driver? Think about it. NOTE: This issue is addressed in part by fixing the bug noted in (c) above. I\'92m not sure you\'92ll need to do anything else. 
 \b0 \
-{\listtext	\'95	}Get groups up and running. \
+{\listtext	\uc0\u8226 	}Get groups up and running. \
 \pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
 \cf0 \
 Vers 0.2.2\
@@ -47,7 +49,7 @@ There was an incredibly stupid error in the lateral inhibition function for reci
 PROBLEMS:\
 \
 \pard\tx220\tx720\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\li720\fi-720\pardirnatural\partightenfactor0
-\ls2\ilvl0\cf0 {\listtext	\'95	}There is something wrong with the way that semantic links are created. POs are connected to semantics that they shouldn\'92t be (in the recipient for sure, maybe in the driver and memory as well). \{
+\ls2\ilvl0\cf0 {\listtext	\uc0\u8226 	}There is something wrong with the way that semantic links are created. POs are connected to semantics that they shouldn\'92t be (in the recipient for sure, maybe in the driver and memory as well). \{
 \b NOTE: I can\'92t get this error to repeat in more current versions. I don\'92t know what gave rise to it initially.
 \b0 \} \
 \pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
@@ -64,50 +66,50 @@ Created a runDORA object to replace runDORA function.\
 \cf0 PROBLEMS:\
 \
 \pard\tx220\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li720\fi-720\pardirnatural\partightenfactor0
-\ls3\ilvl0\cf0 {\listtext	\'95	}\strike \strikec0 Must update DORA menus for new runDORA object.\strike0\striked0  -- 
+\ls3\ilvl0\cf0 {\listtext	\uc0\u8226 	}\strike \strikec0 Must update DORA menus for new runDORA object.\strike0\striked0  -- 
 \b FIXED (I think).
 \b0 \
-{\listtext	\'95	}\strike \strikec0 During retrieval with relations that are arguments of higher-order relations you get problems. The reason for the problem is noted in basicRunDORA line 894. 
+{\listtext	\uc0\u8226 	}\strike \strikec0 During retrieval with relations that are arguments of higher-order relations you get problems. The reason for the problem is noted in basicRunDORA line 894. 
 \b \strike0\striked0 \'97FIXED.
 \b0 \strike \strikec0 \
-{\listtext	\'95	}After retrieval, sometimes the POs in the recipient will not get active (WHY???). Seems to only happen when there are lower order units in driver and recipient. Retrieval seems to mess with unit activations and inhibitors. (
+{\listtext	\uc0\u8226 	}After retrieval, sometimes the POs in the recipient will not get active (WHY???). Seems to only happen when there are lower order units in driver and recipient. Retrieval seems to mess with unit activations and inhibitors. (
 \b I think this might be fixed.
 \b0 ) \strike0\striked0  
 \b \'97FIXED.
 \b0 \strike \strikec0 \
-{\listtext	\'95	}Another wonky retrieval problem is that parts of propositions well get retrieved. Basically, retrieval needs a MAJOR overhaul. (
+{\listtext	\uc0\u8226 	}Another wonky retrieval problem is that parts of propositions well get retrieved. Basically, retrieval needs a MAJOR overhaul. (
 \b I think this might be fixed.
 \b0 )\strike0\striked0 \
-{\listtext	\'95	}During schematization in LISA mode sometimes RB will form that have no Object or Child P (i.e., they only have a pred). I don't know why this is. I can\'92t get this error to replicate consistently. I have added a debugging catch in case it happens again. I also changed the licensing for schematization such that it is only licensed if all tokens in both driver and recipient map. I did so to keep schema formation from running too frequently during the rest of development. I\'92ll want to change it back in the future. \
-{\listtext	\'95	}\strike \strikec0 There is a problem with normalization of mapping hypotheses during update of mapping connections\strike0\striked0 . 
+{\listtext	\uc0\u8226 	}During schematization in LISA mode sometimes RB will form that have no Object or Child P (i.e., they only have a pred). I don't know why this is. I can\'92t get this error to replicate consistently. I have added a debugging catch in case it happens again. I also changed the licensing for schematization such that it is only licensed if all tokens in both driver and recipient map. I did so to keep schema formation from running too frequently during the rest of development. I\'92ll want to change it back in the future. \
+{\listtext	\uc0\u8226 	}\strike \strikec0 There is a problem with normalization of mapping hypotheses during update of mapping connections\strike0\striked0 . 
 \b -- FIXED
 \b0 .\
-{\listtext	\'95	}There is something wrong with the way semantic units normalize their input. I have NOT fixed the problem with semantic normalization. (I'm not actually sure there is a problem.)\
-{\listtext	\'95	}\strike \strikec0 A problem (that I don't necessarily have the solution for) is that if you have an token in memory that is shared by several propositions in the same analog, then retrieving one proposition from that analog into driver and another into recipient means the shared token doesn't know where to go (driver or recipient). Perhaps the solution is to have analog level retrieval. Another solution is to make copies of the tokens in driver and recipient, then put them back into memory. I don't actually like the later solution, though.\strike0\striked0   
+{\listtext	\uc0\u8226 	}There is something wrong with the way semantic units normalize their input. I have NOT fixed the problem with semantic normalization. (I'm not actually sure there is a problem.)\
+{\listtext	\uc0\u8226 	}\strike \strikec0 A problem (that I don't necessarily have the solution for) is that if you have an token in memory that is shared by several propositions in the same analog, then retrieving one proposition from that analog into driver and another into recipient means the shared token doesn't know where to go (driver or recipient). Perhaps the solution is to have analog level retrieval. Another solution is to make copies of the tokens in driver and recipient, then put them back into memory. I don't actually like the later solution, though.\strike0\striked0   
 \b \'97FIXED.
 \b0 \
-{\listtext	\'95	}\strike \strikec0 During schematization, if there is anything at all in driver or recipient that does not map, then schematization will not run. You just need to make sure than any schematization will work for anything that maps to anything. Basically, you should just run all mapped items in the driver and let schematization happen.\strike0\striked0  
+{\listtext	\uc0\u8226 	}\strike \strikec0 During schematization, if there is anything at all in driver or recipient that does not map, then schematization will not run. You just need to make sure than any schematization will work for anything that maps to anything. Basically, you should just run all mapped items in the driver and let schematization happen.\strike0\striked0  
 \b \'97FIXED.
 \b0 \
-{\listtext	\'95	}\strike \strikec0 During the clearing of memory during DORA run, somehow the memory gets deleted. I don't know why this is.  \strike0\striked0 --
+{\listtext	\uc0\u8226 	}\strike \strikec0 During the clearing of memory during DORA run, somehow the memory gets deleted. I don't know why this is.  \strike0\striked0 --
 \b FIXED
 \b0 .\
-{\listtext	\'95	}\strike \strikec0 basicRunDORA.reset_mappings seems to delete the entire memory \strike0\striked0 --
+{\listtext	\uc0\u8226 	}\strike \strikec0 basicRunDORA.reset_mappings seems to delete the entire memory \strike0\striked0 --
 \b FIXED
 \b0 .\strike \strikec0 \
-\ls3\ilvl0\strike0\striked0 {\listtext	\'95	}\strike \strikec0 Schematization creates some pretty odd results because you have NO check for whether schematization should be allowed (all items in driver map to something in recipient (or vise-versa).\strike0\striked0  -- 
+\ls3\ilvl0\strike0\striked0 {\listtext	\uc0\u8226 	}\strike \strikec0 Schematization creates some pretty odd results because you have NO check for whether schematization should be allowed (all items in driver map to something in recipient (or vise-versa).\strike0\striked0  -- 
 \b FIXED
 \b0 .\
-{\listtext	\'95	}\strike \strikec0 DURING MAPPING OBJECTS IN THE RECIPIENT DON'T BECOME ACTIVE, PREDS DOMINATE FIRING. WHY?\strike0\striked0  -- 
+{\listtext	\uc0\u8226 	}\strike \strikec0 DURING MAPPING OBJECTS IN THE RECIPIENT DON'T BECOME ACTIVE, PREDS DOMINATE FIRING. WHY?\strike0\striked0  -- 
 \b FIXED
 \b0 : PO inhibitors in recipient where not firing (code line was commented out).\
-{\listtext	\'95	}\strike \strikec0 Schematization for higher-order relations seems broken. Check what happens when you schematize two knows(x,P) analogs. I think the problem is due to the fact that RBs are firing randomly. I fixed the problem with RBs firing at random during schematization (now they fire randomly within P units (or RBs if no Ps, POs if no RBs).\strike0\striked0  -- 
+{\listtext	\uc0\u8226 	}\strike \strikec0 Schematization for higher-order relations seems broken. Check what happens when you schematize two knows(x,P) analogs. I think the problem is due to the fact that RBs are firing randomly. I fixed the problem with RBs firing at random during schematization (now they fire randomly within P units (or RBs if no Ps, POs if no RBs).\strike0\striked0  -- 
 \b FIXED
 \b0 .\
-{\listtext	\'95	}\strike \strikec0 During schematization, the first PO in newSet continuously loses connection weights to it's semantics while other POs are being inferred. Why? You need to run from the python terminal to check what's wrong here. Problem was that calculation of most active unit for POs was wonky\strike0\striked0  -- 
+{\listtext	\uc0\u8226 	}\strike \strikec0 During schematization, the first PO in newSet continuously loses connection weights to it's semantics while other POs are being inferred. Why? You need to run from the python terminal to check what's wrong here. Problem was that calculation of most active unit for POs was wonky\strike0\striked0  -- 
 \b FIXED
 \b0 .\
-{\listtext	\'95	}\strike \strikec0 There is something wrong with object POs firing during LISA mode. Object POs don't seem to ever get active. Why are they so strongly inhibited. The problem is that object POs are getting an extraordinary amount of mapping inhibition from Preds in the driver (notice they should be getting no input from driver Preds!!!!!)\strike0\striked0 . 
+{\listtext	\uc0\u8226 	}\strike \strikec0 There is something wrong with object POs firing during LISA mode. Object POs don't seem to ever get active. Why are they so strongly inhibited. The problem is that object POs are getting an extraordinary amount of mapping inhibition from Preds in the driver (notice they should be getting no input from driver Preds!!!!!)\strike0\striked0 . 
 \b -- FIXED.
 \b0  \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
