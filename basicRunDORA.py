@@ -35,6 +35,7 @@ class runDORA(object):
         self.strategic_mapping = parameters['strategic_mapping']
         self.ignore_object_semantics = parameters['ignore_object_semantics']
         self.ignore_memory_semantics = parameters['ignore_memory_semantics']
+        self.mag_decimal_precision = parameters['mag_decimal_precision']
         self.dim_list = parameters['dim_list']
         self.exemplar_memory = parameters['exemplar_memory']
         self.recent_analog_bias = parameters['recent_analog_bias']
@@ -2793,7 +2794,10 @@ def basic_en_based_mag_refinement(myPO, myPO2, memory):
     return memory
 
 # function calculates more/less/same from two codes of extent based on entropy and competion.
-def ent_magnitudeMoreLessSame(extent1, extent2):
+def ent_magnitudeMoreLessSame(extent1, extent2, mag_decimal_precision=0):
+    # convert extents to whole numbers using the mag_decimal_precision variable, rounding, and adding 1 (mag_decimal_precision and rouding to make decimal values into whole numbers, and adding 1 to account for the possibility that someone has used 0 values for magnitudes). 
+    extent1 = round(extent1*(pow(10, mag_decimal_precision)))+1
+    extent2 = round(extent2*(pow(10, mag_decimal_precision)))+1
     # take two representations of extent, and have them compete.
     # first build a simple entropyNet with the extents as lower-level nodes.
     entropyNet = dataTypes.entropyNet()
