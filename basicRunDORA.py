@@ -327,7 +327,7 @@ class runDORA(object):
                         intersect_dim, one_mag_sem_present, both_mag_sem_present = en_based_mag_checks(myPO, myPO2)
                         # if the POs are preds, and mag_sem_present is False, then run ent_magnitudeMoreLessSame().
                         if not one_mag_sem_present and (myPO.predOrObj == 1) and (len(intersect_dim) == 1):
-                            self.memory = basic_en_based_mag_comparison(myPO, myPO2, intersect_dim, self.memory)
+                            self.memory = basic_en_based_mag_comparison(myPO, myPO2, intersect_dim, self.memory, self.mag_decimal_precision)
                         # if the POs are preds and those preds code at least one common dimension, then run ent_magnitudeMoreLessSame().
                         elif (myPO.predOrObj == 1) and both_mag_sem_present and extend_SDML==True:
                             # if there are magnitude semantics present, and there are some matching dimensions, then activate the appropriate magnitude semantics and matching dimensions, and adjust weights as appropriate (i.e., turn on the appropriate magnitude semantics for each PO, and adjust weights accordingly).
@@ -343,7 +343,7 @@ class runDORA(object):
                                 # get the extents/amounts for the dimension.
                                 extent1 = sem_link_PO.mySemantic.amount
                                 extent2 = sem_link_PO2.mySemantic.amount
-                                more, less, same_flag, iterations = ent_magnitudeMoreLessSame(extent1, extent2)
+                                more, less, same_flag, iterations = ent_magnitudeMoreLessSame(extent1, extent2, self.mag_decimal_precision)
                                 # connect the two POs to the appropraite relative magnitude semantics (based on the invariant patterns detected doing ent_magnitudeMoreLessSame()).
                                 if more == extent2:
                                     # call attach_mag_semantics() with myPO2 as firstPO and myPO as secondPO.
@@ -2638,7 +2638,7 @@ def en_based_mag_checks(myPO, myPO2):
     return intersect_dim, one_mag_sem_present, both_mag_sem_present
 
 # function to do basic energy/entropy based magnitude comparison when no magnitude semantics are  present. 
-def basic_en_based_mag_comparison(myPO, myPO2, intersect_dim, memory):
+def basic_en_based_mag_comparison(myPO, myPO2, intersect_dim, memory, mag_decimal_precision=0):
     # find the semantic links connecting to the absolute dimensional value. 
     sem_link_PO = [link for link in myPO.mySemantics if (link.mySemantic.dimension == intersect_dim[0]) and link.mySemantic.ont_status == 'value']
     sem_link_PO2 = [link for link in myPO2.mySemantics if (link.mySemantic.dimension == intersect_dim[0]) and link.mySemantic.ont_status == 'value']
@@ -2651,7 +2651,7 @@ def basic_en_based_mag_comparison(myPO, myPO2, intersect_dim, memory):
         extent1 = sem_link_PO.mySemantic.amount
         extent2 = sem_link_PO2.mySemantic.amount
     # compute ent_magnitudeMoreLessSame(). 
-    more, less, same_flag, iterations = ent_magnitudeMoreLessSame(extent1, extent2)
+    more, less, same_flag, iterations = ent_magnitudeMoreLessSame(extent1, extent2, mag_decimal_precision)
     # find any other dimensional semantics with high weights so that the weights can be reduced by the entropy process. 
     other_sem_links_PO = [link for link in myPO.mySemantics if (link.mySemantic.dimension != None) and (link.mySemantic.dimension != intersect_dim[0])]
     other_sem_links_PO2 = [link for link in myPO2.mySemantics if (link.mySemantic.dimension != None) and (link.mySemantic.dimension != intersect_dim[0])]

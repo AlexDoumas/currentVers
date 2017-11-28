@@ -13,7 +13,7 @@ parameters =
 'strategic_mapping': False, 
 'ignore_object_semantics': False, 
 'ignore_memory_semantics': True, 
-'mag_decimal_precision' = 0, 
+'mag_decimal_precision': 0, 
 'dim_list': [], 
 'exemplar_memory': False, 
 'recent_analog_bias': True, 
