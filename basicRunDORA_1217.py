@@ -325,9 +325,8 @@ class runDORA(object):
                     if (myPO is not myPO2) and (myPO.predOrObj == myPO2.predOrObj):
                         # check if they code the same dimension (are they both connected to a semantic unit coding a dimension with a weight near 1?), and whether any POs are connected to any SDM semantics (i.e., "more", "less", or "same"). 
                         intersect_dim, one_mag_sem_present, both_mag_sem_present = en_based_mag_checks(myPO, myPO2)
-                        # if the POs are preds, and mag_sem_present is False, then run ent_magnitudeMoreLessSame(). 
+                        # if the POs are preds, and mag_sem_present is False, then run ent_magnitudeMoreLessSame().
                         if not one_mag_sem_present and (myPO.predOrObj == 1) and (len(intersect_dim) == 1):
-                            print intersect_dim
                             self.memory = basic_en_based_mag_comparison(myPO, myPO2, intersect_dim, self.memory, self.mag_decimal_precision)
                         # if the POs are preds and those preds code at least one common dimension, then run ent_magnitudeMoreLessSame().
                         elif (myPO.predOrObj == 1) and both_mag_sem_present and extend_SDML==True:
@@ -2797,8 +2796,8 @@ def basic_en_based_mag_refinement(myPO, myPO2, memory):
 # function calculates more/less/same from two codes of extent based on entropy and competion.
 def ent_magnitudeMoreLessSame(extent1, extent2, mag_decimal_precision=0):
     # convert extents to whole numbers using the mag_decimal_precision variable, rounding, and adding 1 (mag_decimal_precision and rouding to make decimal values into whole numbers, and adding 1 to account for the possibility that someone has used 0 values for magnitudes). 
-    extent1 = round(extent1*(pow(100, mag_decimal_precision)))+1
-    extent2 = round(extent2*(pow(100, mag_decimal_precision)))+1
+    extent1 = round(extent1*(pow(10, mag_decimal_precision)))+1
+    extent2 = round(extent2*(pow(10, mag_decimal_precision)))+1
     # take two representations of extent, and have them compete.
     # first build a simple entropyNet with the extents as lower-level nodes.
     entropyNet = dataTypes.entropyNet()
@@ -2844,18 +2843,18 @@ def ent_magnitudeMoreLessSame(extent1, extent2, mag_decimal_precision=0):
         for node in entropyNet.outputs:
             node.update_act(gamma, delta)
         # FOR DEBUGGING: print inputs and outputs of all nodes.
-        #print 'iteration = ', iterations
-        #print 'INPUTS'
-        #for node in entropyNet.inputs:
-        #    print node.input, ', ', node.act
-        #print 'OUTPUTS'
-        #for node in entropyNet.outputs:
-        #    print node.input, ', ', node.act
+        print 'iteration = ', iterations
+        print 'INPUTS'
+        for node in entropyNet.inputs:
+            print node.input, ', ', node.act
+        print 'OUTPUTS'
+        for node in entropyNet.outputs:
+            print node.input, ', ', node.act
         # check for settling. if the delta_outputs has not changed, add 1 to settled, otherwise, clear unsettled.
         delta_outputs = entropyNet.outputs[0].act-entropyNet.outputs[1].act
-        #print delta_outputs == delta_outputs_previous
-        #print settled
-        #print ''
+        print delta_outputs == delta_outputs_previous
+        print settled
+        print ''
         if delta_outputs == delta_outputs_previous:
             settled += 1
         else:
