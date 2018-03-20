@@ -48,7 +48,7 @@ class TokenUnit(object):
         self.act = 0.0 # initialize act to 0.0.
     
     def initialize_state(self):
-        self.initialize_act(0.0)
+        self.initialize_act()
         self.retrieved = False
     
     def update_act(self, gamma, delta, HebbBias):
@@ -144,8 +144,8 @@ class PUnit(TokenUnit):
         # P units in parent mode:
         # sources of input:
         # Exitatory: td (my Groups), bu (my RBs).
-        # Inhibitory: lateral (other P units in parent mode*3), inhibitor.
-        # get my td_input
+        # Inhibitory: lateral (other P units in parent mode*3), inhibitor. 
+        # get my td_input. 
         # my td_input comes from my RBs.
         for Group in self.myGroups:
             self.td_input += Group.act
@@ -408,7 +408,7 @@ class POUnit(TokenUnit):
             if phase_set >= 1:
                 for myRB in self.myRBs:
                     if self.predOrObj == 1:
-                        self.td_input += myRB.act*2
+                        self.td_input += myRB.act*1
                     else:
                         self.td_input += myRB.act
             # bu input from my semantics. Remeber that you divisively normalize by the number of semantics the PO is connected to above threshold(=.1).

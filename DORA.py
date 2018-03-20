@@ -16,9 +16,9 @@ path_name = 'pythonDORA/currentVers'  # current path DORA's looking in.
 # Parameters.
 # create a big dictionary called parameters, with all parameters as fields.
 # eta is for using for updating mapping connections.
-# run_order is an array indicating the order of operations for a learning phase (cdr=clear driver and recipient, cr=clear recipient, selectTokens=select token units from memory to place in the driver (the selection of tokens is by analog (i.e., a specific analog is chosen, and all tokens from that analog are placed in the driver)), selectP=select a P at random from memory to place in the driver, , r=retrieval, m=map, p=predicate, f=form new relation, g=relational generalization, s=schema induction, 'b'=between group entropy ops, 'w'=within group entropy ops, 'wp'=within group entropy ops for preds only, c=clear results, cl=limited clear results (just inferences and newSet), wdr= write the current state of the driver and recipient to output file, wn=write current state of the network to output file).
+# run_order is an array indicating the order of operations for a learning phase (cdr=clear driver and recipient, cr=clear recipient, selectTokens=select token units from memory to place in the driver (the selection of tokens is by analog (i.e., a specific analog is chosen, and all tokens from that analog are placed in the driver)), selectP=select a P at random from memory to place in the driver, , r=retrieval, m=map, p=predicate, f=form new relation, g=relational generalization, s=schema induction, 'b'=between group entropy ops, 'w'=within group entropy ops, 'wp'=within group entropy ops for preds only (NOTE: b, w, and wp operations are newer to the theory and therefore listed after the old DORA operations; in reality accourdin to the theory, they should occur after retrieval and before mapping), c=clear results, cl=limited clear results (just inferences and newSet), wdr= write the current state of the driver and recipient to output file, wn=write current state of the network to output file).
 # ignore_object_semantics is a parameter used when running in LISA mode. It allows DORA to downweight object semantics when multiple propositions are in the driver together. NOTE: I'm not sure if placing this item in the parameters dict is the best long-term solution. Likely, you'll want to integrate switching ignore_object_semantics automatically in the model based on context.
-parameters = {'asDORA': True, 'gamma': 0.3, 'delta': 0.1, 'eta': 0.9, 'HebbBias': 0.5,'bias_retrieval_analogs': True, 'use_relative_act': True, 'run_order': ['cdr', 'selectTokens', 'r', 'wp', 'm', 'p', 'f', 's', 'c'], 'run_cyles': 5000, 'write_on_iteration': 100, 'firingOrderRule': 'random', 'strategic_mapping': False, 'ignore_object_semantics': False, 'ignore_memory_semantics': True, 'mag_decimal_precision': 0, 'dim_list': ['height', 'width', 'depth', 'size'], 'exemplar_memory': False, 'recent_analog_bias': True, 'lateral_input_level': 1, 'screen_width': 1200, 'screen_height': 700, 'doGUI': True, 'GUI_update_rate': 50, 'starting_iteration': 0}
+parameters = {'asDORA': True, 'gamma': 0.3, 'delta': 0.1, 'eta': 0.9, 'HebbBias': 0.5, 'bias_retrieval_analogs': True, 'use_relative_act': True, 'run_order': ['cdr', 'selectTokens', 'r', 'wp', 'm', 'p', 'f', 's', 'c'], 'run_cyles': 5000, 'write_on_iteration': 100, 'firingOrderRule': 'random', 'strategic_mapping': False, 'ignore_object_semantics': False, 'ignore_memory_semantics': True, 'mag_decimal_precision': 0, 'dim_list': [], 'exemplar_memory': False, 'recent_analog_bias': True, 'lateral_input_level': 1, 'screen_width': 1200, 'screen_height': 700, 'doGUI': True, 'GUI_update_rate': 50, 'starting_iteration': 0}
 
 # do a run_on_iphone check and set show_GUI to false if running on iphone.
 if run_on_iphone:
@@ -623,7 +623,7 @@ class ctrlStruct(object):
                         # select an analog with a bias towards more recent analogs (exact probabilities specified in code below).
                         # select a random number.
                         rand_num = random.random()
-                        if rand_num <= .5:
+                        if rand_num >= .8:
                             # select from Ps if available, or RBs if available and no Ps available.
                             if len(self.network.memory.Ps) > 0:
                                 # randomly select a P and use that P's analog.
@@ -636,15 +636,15 @@ class ctrlStruct(object):
                             else:
                                 # select anything from what's there. 
                                 analog = random.choice(self.network.memory.analogs)
-                        elif rand_num <= .8:
-                            # select from RBs if available.
-                            if len(self.network.memory.RBs) > 0:
-                                # randomly select a RB and use that RB's analog.
-                                myRB = random.choice(self.network.memory.RBs)
-                                analog = myRB.myanalog
-                            else:
-                                # select anything from what's there. 
-                                analog = random.choice(self.network.memory.analogs)
+                        #elif rand_num <= .8:
+                        #    # select from RBs if available.
+                        #    if len(self.network.memory.RBs) > 0:
+                        #        # randomly select a RB and use that RB's analog.
+                        #        myRB = random.choice(self.network.memory.RBs)
+                        #        analog = myRB.myanalog
+                        #    else:
+                        #        # select anything from what's there. 
+                        #        analog = random.choice(self.network.memory.analogs)
                         else:
                             # select from memory without bias.
                             analog = random.choice(self.network.memory.analogs)
