@@ -7,37 +7,20 @@ import basicRunDORA
 import pdb
 
 # set the parameters. 
-parameters = {'asDORA': True, 
-'gamma': 0.3, 
-'delta': 0.1, 
-'eta': 0.9, 
-'HebbBias': 0.5,
-'bias_retrieval_analogs': True, 
-'use_relative_act': True, 
-'run_order': ['cdr', 'selectTokens', 'r', 'wp', 'm', 'p', 'f', 's', 'c'], 
-'run_cyles': 5000, 
-'write_on_iteration': 100, 
-'firingOrderRule': 'random', 
-'strategic_mapping': False, 
-'ignore_object_semantics': False, 
-'ignore_memory_semantics': True, 
-'mag_decimal_precision': 0, 
-'dim_list': [], 
-'exemplar_memory': False, 
-'recent_analog_bias': True, 
-'lateral_input_level': 1, 'screen_width': 1200, 
-'screen_height': 700, 
-'doGUI': True, 
-'GUI_update_rate': 5, 
-'starting_iteration': 0}
+parameters = {'asDORA': True, 'gamma': 0.3, 'delta': 0.1, 'eta': 0.9, 'HebbBias': 0.5,'bias_retrieval_analogs': True, 'use_relative_act': True, 'run_order': ['cdr', 'selectTokens', 'r', 'wp', 'm', 'p', 'f', 's', 'c'], 'run_cyles': 5000, 'write_on_iteration': 100, 'firingOrderRule': 'random', 'strategic_mapping': False, 'ignore_object_semantics': False, 'ignore_memory_semantics': True, 'mag_decimal_precision': 0, 'dim_list': ['height', 'width', 'depth', 'size'], 'exemplar_memory': False, 'recent_analog_bias': True, 'lateral_input_level': 1, 'screen_width': 1200, 'screen_height': 700, 'doGUI': True, 'GUI_update_rate': 50, 'starting_iteration': 0}
 
-# to load a sym file. 
-#f = open('file_name', 'r')
-#f.seek(0)
-#exec (f.readline())
-#symProps = json.loads(f.readline())
-# OR, just set symProps equal to a dict. 
-#symProps = []
+# function to load a sym file.
+def load_sym(file_name):
+    f = open(file_name, 'r')
+    f.seek(0)
+    symstring = ''
+    for line in f:
+        symstring += line
+    return symstring
+
+# to load a sym file.
+symstring = load_sym('rule_transfer_symFile.py')
+exec symstring
 
 # initialise memory. 
 memory = buildNetwork.initializeMemorySet()
@@ -53,11 +36,17 @@ network.memory = basicRunDORA.clearDriverSet(network.memory)
 network.memory = basicRunDORA.clearRecipientSet(network.memory)
 network.memory = basicRunDORA.findDriverRecipient(network.memory)
 
+# other useful ops.
+basicRunDORA.swap_driverRecipient(network.memory)
+#network.memory = basicRunDORA.findDriverRecipient(network.memory)
+network.do_compression()
+
 # DORA operations run operatons. 
 network.do_retrieval()
 network.do_map()
 network.do_entropy_ops_between()
 network.do_entropy_ops_within(pred_only=True)
+network.do_compression()
 pred_ok = basicRunDORA.predication_requirements(network.memory)
 if pred_ok:
     network.do_predication()
@@ -97,6 +86,8 @@ network.memory.newSet.Ps, network.memory.newSet.RBs, network.memory.newSet.POs =
 network.memory = basicRunDORA.update_Names_nil(network.memory)
 # save the network state. 
 basicRunDORA.write_memory_to_symfile(network.memory, 'new_name')
+
+
 
 
 

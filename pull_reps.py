@@ -77,7 +77,7 @@ def sample_item_from_state(state_array, criterion):
                     if (semantic[0] == criterion) and (semantic[1]>.9):
                         go_on = False
                         break
-            if go_on == False:
+            if not go_on:
                 break
     # return the sampled item.
     return prop

@@ -89,7 +89,7 @@ for pred_group in memory_list:
             high_weight = 0.0
             high_dim = 'nil'
             for sem in pred[0]:
-                if sem[0] == 'size' or sem[0] == 'height' or sem[0] == 'width' or sem[0] == 'depth':
+                if sem[0] == 'time' or sem[0] == 'X' or sem[0] == 'Y' or sem[0] == 'xvel' or sem[0] == 'yvel':
                     if sem[1] > high_weight:
                         high_dim = sem[0]
                         high_weight = sem[1]
@@ -126,7 +126,7 @@ for pred_group in memory_list:
                 high_weight = 0.0
                 high_dim = 'nil'
                 for sem in pred[0]:
-                    if sem[0] == 'size' or sem[0] == 'height' or sem[0] == 'width' or sem[0] == 'depth':
+                    if sem[0] == 'time' or sem[0] == 'X' or sem[0] == 'Y' or sem[0] == 'xvel' or sem[0] == 'yvel':
                         if sem[1] > high_weight:
                             high_dim = sem[0]
                             high_weight = sem[1]
@@ -157,7 +157,7 @@ for pred_group in memory_list:
                 high_weight = 0.0
                 high_dim = 'nil'
                 for sem in pred[0]:
-                    if sem[0] == 'size' or sem[0] == 'height' or sem[0] == 'width' or sem[0] == 'depth':
+                    if sem[0] == 'time' or sem[0] == 'X' or sem[0] == 'Y' or sem[0] == 'xvel' or sem[0] == 'yvel':
                         if sem[1] > high_weight:
                             high_dim = sem[0]
                             high_weight = sem[1]
@@ -218,9 +218,9 @@ RBs = num_by_state[:,1]
 Ps = num_by_state[:,2]
 x_length = len(num_by_state)
 x = numpy.arange(0,x_length*50, 50)
-POs,=plt.plot(x,POs, 'k.', linewidth=3.0, label='objects')
-RBs,=plt.plot(x,RBs, 'k--', linewidth=3.0, label='single-place predicates')
-Ps,=plt.plot(x,Ps, 'k-', linewidth=3.0, label='whole relations')
+POs,=plt.plot(x,POs, 'r.', linewidth=1.0, label='objects')
+RBs,=plt.plot(x,RBs, 'b--', linewidth=1.0, label='single-place predicates')
+Ps,=plt.plot(x,Ps, 'k-', linewidth=1.0, label='whole relations')
 plt.legend([POs, RBs, Ps], ['objects', 'single-place predicates', 'whole relations'])
 plt.xlabel('iteration')
 plt.ylabel('number of representations in LTM')

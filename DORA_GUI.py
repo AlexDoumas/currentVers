@@ -699,15 +699,15 @@ def simple_term_state_display(memory):
         print(printstring)
     print('P units:')
     for myP in memory.driver.Ps:
-        printstring = str(myP.name) + ': ACT=' + str(P.act) + ' and INPUT=' + str(myP.net_input)
+        printstring = str(myP.name) + ': ACT=' + str(myP.act) + ' and INPUT=' + str(myP.net_input)
         print(printstring)
     print('RB units:')
     for myRB in memory.driver.RBs:
-        printstring = str(myRB.name) + ': ACT=' + str(RB.act) + ' and INPUT=' + str(myRB.net_input)
+        printstring = str(myRB.name) + ': ACT=' + str(myRB.act) + ' and INPUT=' + str(myRB.net_input)
         print(printstring)
     print('PO units:')
     for myPO in memory.driver.POs:
-        printstring = str(myPO.name) + ': ACT=' + str(PO.act) + ' and INPUT=' + str(myPO.net_input)
+        printstring = str(myPO.name) + ': ACT=' + str(myPO.act) + ' and INPUT=' + str(myPO.net_input)
         print(printstring)
     print('')
     # display recipient state.
@@ -718,15 +718,15 @@ def simple_term_state_display(memory):
         print(printstring)
     print('P units:')
     for myP in memory.recipient.Ps:
-        printstring = str(myP.name) + ': ACT=' + str(P.act) + ' and INPUT=' + str(myP.net_input)
+        printstring = str(myP.name) + ': ACT=' + str(myP.act) + ' and INPUT=' + str(myP.net_input)
         print(printstring)
     print('RB units:')
     for myRB in memory.recipient.RBs:
-        printstring = str(myRB.name) + ': ACT=' + str(RB.act) + ' and INPUT=' + str(myRB.net_input)
+        printstring = str(myRB.name) + ': ACT=' + str(myRB.act) + ' and INPUT=' + str(myRB.net_input)
         print(printstring)
     print('PO units:')
     for myPO in memory.recipient.POs:
-        printstring = str(myPO.name) + ': ACT=' + str(PO.act) + ' and INPUT=' + str(myPO.net_input)
+        printstring = str(myPO.name) + ': ACT=' + str(myPO.act) + ' and INPUT=' + str(myPO.net_input)
         print(printstring)
     print('')
 
@@ -767,15 +767,15 @@ def full_term_state_display(memory):
         print(printstring)
     print('P units:')
     for myP in memory.recipient.Ps:
-        printstring = str(P.name) + ': ACT=' + str(myP.act) + ' and INPUT=' + str(myP.net_input)
+        printstring = str(myP.name) + ': ACT=' + str(myP.act) + ' and INPUT=' + str(myP.net_input)
         print(printstring)
     print('RB units:')
     for myRB in memory.recipient.RBs:
-        printstring = str(RB.name) + ': ACT=' + str(myRB.act) + ' and INPUT=' + str(myRB.net_input)
+        printstring = str(myRB.name) + ': ACT=' + str(myRB.act) + ' and INPUT=' + str(myRB.net_input)
         print(printstring)
     print('PO units:')
     for myPO in memory.recipient.POs:
-        printstring = str(PO.name) + ': ACT=' + str(myPO.act) + ' and INPUT=' + str(myPO.net_input)
+        printstring = str(myPO.name) + ': ACT=' + str(myPO.act) + ' and INPUT=' + str(myPO.net_input)
         print(printstring)
     print('')
     # display memory state.
@@ -788,17 +788,17 @@ def full_term_state_display(memory):
     print('P units:')
     for myP in memory.Ps:
         if myP.set != 'driver' and myP.set != 'recipient':
-            printstring = str(P.name) + ': ACT=' + str(myP.act) + ' and INPUT=' + str(myP.net_input)
+            printstring = str(myP.name) + ': ACT=' + str(myP.act) + ' and INPUT=' + str(myP.net_input)
             print(printstring)
     print('RB units:')
     for myRB in memory.RBs:
         if myRB.set != 'driver' and myRB.set != 'recipient':
-            printstring = str(RB.name) + ': ACT=' + str(myRB.act) + ' and INPUT=' + str(myRB.net_input)
+            printstring = str(myRB.name) + ': ACT=' + str(myRB.act) + ' and INPUT=' + str(myRB.net_input)
             print(printstring)
     print('PO units:')
     for myPO in memory.POs:
         if myPO.set != 'driver' and myPO.set != 'recipient':
-            printstring = str(PO.name) + ': ACT=' + str(myPO.act) + ' and INPUT=' + str(myPO.net_input)
+            printstring = str(myPO.name) + ': ACT=' + str(myPO.act) + ' and INPUT=' + str(myPO.net_input)
             print(printstring)
     print('')
 
@@ -807,13 +807,13 @@ def term_network_display(memory, set_to_display):
     # this function takes as input the memory data, and a set_to_display string specifying, 'driver', 'recipient', or 'memory', and then prints the elements in that set to the screen and to a text file.
     # structure of a printed analog is myP.name /n myRB.name-PO_pred.name(PO.semantics)-PO_obj.name(PO.semantics), for each RB, for each analog topping out at a P unit, then myRB.name-PO_pred.name(PO.semantics)-PO_obj.name(PO>semantics), for each analog toppig out at a RB, then myPO.name(semantics), for each analog topping out with a PO unit.
     if set_to_display == 'driver':
-        print ''
-        print 'DRIVER:'
+        print('')
+        print('DRIVER:')
         group_counter = 0
         for group in memory.driver.Groups:
             group_counter += 1
             # print my name and info for all my tokens.
-            print ''
+            print('')
             term_display_group(group, group_counter)
         # now draw the Ps.
         P_counter = 0
@@ -826,7 +826,7 @@ def term_network_display(memory, set_to_display):
             #   print ''
             #   term_display_P(myP, P_counter)
             # print my name, then info for each of my RBs.
-            print ''
+            print('')
             term_display_P(myP, P_counter)
         # draw each RB that has no Ps above it.
         RB_counter = 0
@@ -845,13 +845,13 @@ def term_network_display(memory, set_to_display):
             # NOTE: term_display_PO function takes care of not drawing POs with no RBs.
             term_display_PO(myPO, PO_counter)
     elif set_to_display == 'recipient':
-        print ''
-        print 'RECIPIENT:'
+        print('')
+        print('RECIPIENT:')
         group_counter = 0
         for group in memory.recipient.Groups:
             group_counter += 1
             # print my name and info for all my tokens.
-            print ''
+            print('')
             term_display_group(group, group_counter)
         # now draw the Ps.
         P_counter = 0
@@ -864,7 +864,7 @@ def term_network_display(memory, set_to_display):
             #   print ''
             #   term_display_P(myP, P_counter)
             # print my name, then info for each of my RBs.
-            print ''
+            print('')
             term_display_P(myP, P_counter)
         # draw each RB that has no Ps above it.
         RB_counter = 0
@@ -883,13 +883,13 @@ def term_network_display(memory, set_to_display):
             # NOTE: term_display_PO function takes care of not drawing POs with no RBs.
             term_display_PO(myPO, PO_counter)
     else:
-        print ''
-        print 'MEMORY:'
+        print('')
+        print('MEMORY:')
         group_counter = 0
         for group in memory.Groups:
             group_counter += 1
             # print my name and info for all my tokens.
-            print ''
+            print('')
             term_display_group(group, group_counter)
         # now draw the Ps.
         P_counter = 0
@@ -902,7 +902,7 @@ def term_network_display(memory, set_to_display):
             #   print ''
             #   term_display_P(myP, P_counter)
             # print my name, then info for each of my RBs.
-            print ''
+            print('')
             term_display_P(myP, P_counter)
         # draw each RB that has no Ps above it.
         RB_counter = 0
@@ -923,7 +923,7 @@ def term_network_display(memory, set_to_display):
 
 # function to display a group and all its tokens (for use with .term_network_display).
 def term_display_group(group, counter):
-    print 'group', counter, '. ', group.name
+    print(('group', counter, '. ', group.name))
     for group2 in group.myGroups:
         myindex = group2.myindex + 1
         term_display_group(group2, myindex)
@@ -933,7 +933,7 @@ def term_display_group(group, counter):
 
 # function to display a P and all its tokens (for use with .term_network_display).
 def term_display_P(myP, counter):
-    print 'P ', counter, '. ', myP.name
+    print(('P ', counter, '. ', myP.name))
     for myRB in myP.myRBs:
         RB_string = myRB.name + '-- Pred_name: ' + myRB.myPred[0].name + ' ('
         # organise the links by weight to disply from hight to low. 
@@ -956,12 +956,12 @@ def term_display_P(myP, counter):
             RB_string += ')'
         elif len(myRB.myChildP) > 0:
             RB_string = RB_string + ') -- PROP_name:' + myRB.myChildP[0].name + ' '
-        print RB_string
+        print(RB_string)
 
 # function to display RB and all its tokens (for use with .term_network_display).
 def term_display_RB(myRB, counter):
     if len(myRB.myParentPs) == 0:
-        print ''
+        print('')
         RB_string = 'RB ' + str(counter) + '.' + myRB.name + '-- Pred_name: ' + myRB.myPred[0].name + ' ('
         # organise the links by weight to disply from hight to low. 
         link_list = []
@@ -979,12 +979,12 @@ def term_display_RB(myRB, counter):
         for link in link_list:
             RB_string = RB_string + link[0] + '-' + str(link[1]) + ', '
         RB_string += ')'
-        print RB_string
+        print(RB_string)
 
 # function to display PO (for use with .term_network_display).
 def term_display_PO(myPO, counter):
     if len(myPO.myRBs) == 0:
-        print ''
+        print('')
         PO_string = 'PO ' + str(counter) + '. -- Obj_name: ' + myPO.name + ' ('
         # organise the links by weight to disply from hight to low. 
         link_list = []
@@ -994,7 +994,7 @@ def term_display_PO(myPO, counter):
         for link in link_list:
             PO_string = PO_string + link[0] + '-' + str(link[1]) + ', '
         PO_string += ')'
-        print PO_string
+        print(PO_string)
 
 # function to display the mapping state of the network (i.e., how driver and recipient map).
 def term_map_display(memory):
@@ -1005,25 +1005,25 @@ def term_map_display(memory):
             group_string = 'GROUP: ' + group.name + ' -- ' + group.max_map_unit.name + ' -- mapping_weight=', group.max_map
         else:
             group_string = 'GROUP: ' + group.name + ' -- ' + 'NONE' + ' -- mapping_weight=', group.max_map
-        print group_string
+        print(group_string)
     for myP in memory.driver.Ps:
         if myP.max_map_unit:
             P_string = 'P: ' + myP.name + ' -- ' + myP.max_map_unit.name + ' -- mapping_weight=', myP.max_map
         else:
             P_string = 'P: ' + myP.name + ' -- ' + 'NONE' + ' -- mapping_weight=', myP.max_map
-        print P_string
+        print(P_string)
     for myRB in memory.driver.RBs:
         if myRB.max_map_unit:
             RB_string = 'RB: ' + myRB.name + ' -- ' + myRB.max_map_unit.name + ' -- mapping_weight=', myRB.max_map
         else:
             RB_string = 'RB: ' + myRB.name + ' -- ' + 'NONE' + ' -- mapping_weight=', myRB.max_map
-        print RB_string
+        print(RB_string)
     for myPO in memory.driver.POs:
         if myPO.max_map_unit:
             PO_string = 'PO: ' + myPO.name + ' -- ' + myPO.max_map_unit.name + ' -- mapping_weignt=', myPO.max_map
         else:
             PO_string = 'PO: ' + myPO.name + ' -- ' +'NONE' + ' -- mapping_weignt=', myPO.max_map
-        print PO_string
+        print(PO_string)
 
 # function to display names of all tokens of a particular type and their place in memory.
 def display_token_names(memory, token):
@@ -1031,45 +1031,45 @@ def display_token_names(memory, token):
         group_counter = 0
         for group in memory.groups:
             group_counter += 1
-            print group_counter, ' -- ', group.name
+            print((group_counter, ' -- ', group.name))
     if token == 'P':
         P_counter = 0
         for myP in memory.Ps:
             P_counter += 1
-            print P_counter, ' -- ', myP.name
+            print((P_counter, ' -- ', myP.name))
     elif token == 'RB':
         RB_counter = 0
         for myRB in memory.RBs:
             RB_counter += 1
-            print RB_counter, ' -- ', myRB.name
+            print((RB_counter, ' -- ', myRB.name))
     elif token == 'PO':
         PO_counter = 0
         for myPO in memory.POs:
             PO_counter += 1
-            print PO_counter, ' -- ', myPO.name
+            print((PO_counter, ' -- ', myPO.name))
 
 # function to display all properties of a specific unit.
 def display_unit(unit):
     # display the unit's act, net_input, td_input, bu_input, map_input, max_map, mappingHypotheses, and mappingConnections.
-    print ''
-    print 'act', unit.act
-    print 'net_input', unit.net_input
-    print 'td_input', unit.td_input
-    print 'bu_input', unit.bu_input
-    print 'lateral_input', unit.lateral_input
-    print 'map_input', unit.map_input
-    print 'HYPOTHESES:'
+    print('')
+    print(('act', unit.act))
+    print(('net_input', unit.net_input))
+    print(('td_input', unit.td_input))
+    print(('bu_input', unit.bu_input))
+    print(('lateral_input', unit.lateral_input))
+    print(('map_input', unit.map_input))
+    print('HYPOTHESES:')
     for hypothesis in unit.mappingHypotheses:
-        print hypothesis.driverToken.name, hypothesis.recipientToken.name, hypothesis.hypothesis
-    print 'MAPPINGS:'
+        print((hypothesis.driverToken.name, hypothesis.recipientToken.name, hypothesis.hypothesis))
+    print('MAPPINGS:')
     for mapping in unit.mappingConnections:
-        print mapping.driverToken.name, mapping.recipientToken.name, mapping.weight
-    print ''
+        print((mapping.driverToken.name, mapping.recipientToken.name, mapping.weight))
+    print('')
 
 # function to display mapping hypothesis information for DEBUGGING.
 def display_mapHyp(memory):
     for hypothesis in memory.mappingHypotheses:
-        print hypothesis.driverToken.name, hypothesis.recipientToken.name, hypothesis.hypothesis, hypothesis.max_hyp
+        print((hypothesis.driverToken.name, hypothesis.recipientToken.name, hypothesis.hypothesis, hypothesis.max_hyp))
 
 
 

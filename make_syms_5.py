@@ -116,7 +116,7 @@ for prop_type in parameters:
 
 # now write all the sym_props to a file.
 write_file = open('new_sym_file.py', 'w')
-write_file.write('simType=\'sym_file\' \nsymProps = ' + str(sym_props))
+write_file.write('simType=\'sim_file\' \nsymProps = ' + str(sym_props))
 
 
 
