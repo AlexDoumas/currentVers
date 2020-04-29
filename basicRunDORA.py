@@ -11,9 +11,9 @@ import numpy as np
 import dataTypes
 import DORA_GUI
 import buildNetwork
-# if not run_on_iphone:
-#     import pygame
-#     from pygame.locals import *
+if not run_on_iphone:
+    import pygame
+    from pygame.locals import *
 import pdb
 
 # Initialize pygame screen size to 1200x800.
@@ -807,104 +807,8 @@ class runDORA(object):
         # return .asDORA state to starting .asDORA state.
         self.asDORA = DORA_state
 
-    # function to collect the rest of the units in the driver after the compression and conjoin them and the compressed part together
-    def collect_the_rest(self, restOfRBs): # ekaterina
-        # do initialize network operations (steps 1-3 above).
-        self.do_1_to_3(mapping=False)
-        phase_set = 1
-        newRBs = []
-        for rb in restOfRBs:
-            # fire the object and the predicate of each RB, recruit a copy of each and also make a copy of RB in emerging recipient
-            firingOrder = []
-            firingOrder.append(rb.myPred[0])
-            firingOrder.append(rb.myObj[0])
-
-            # the copy of the current RB for the emerging proposition
-            new_RB = None
-            # fire each PO in the firing order until local inhibitor fires
-            for currentPO in firingOrder:
-                # initialize phase_set_iterator and flags (local_inhibitor_fired).
-                phase_set_iterator = 1
-                self.local_inhibitor_fired = False
-                # 4.1-4.2) Fire the current RB in the firingOrder. Update the network in discrete time-steps until the globalInhibitor fires (i.e., the current active RB is inhibited by its inhibitor).
-                while self.memory.localInhibitor.act == 0:
-                    # 4.3.1-4.3.10) update network activations.
-                    currentPO.act = 1.0
-                    self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics)
-                    # create copies of POs and connect them to a newly recruited RB
-                    self.memory, new_RB = self.create_copy(self.memory, new_RB, self.gamma)
-                    # fire the local_inhibitor if necessary
-                    self.time_step_fire_local_inhibitor()
-                    # update GUI
-                    if self.doGUI:
-                        self.time_step_doGUI(phase_set_iterator)
-                self.post_count_by_operations()
-            # add the newly recruited RB to the list
-            newRBs.append(new_RB)
-        return newRBs
-
-    # function to assist do_compression(); the non-compressed part of the driver gets copied into a new proposition
-    def create_copy(self, memory, new_RB, gamma): # ekaterina
-        # if there is no new_RB, make one and assign it to new_RB
-        if not new_RB:
-            newSet_new_RB = dataTypes.RBUnit('nil', 'memory', 0, True, 'null') # ekaterina 'memory' instead of 'newSet'
-            newSet_new_RB.act = 1.0
-            memory.RBs.append(newSet_new_RB)
-            # memory.newSet.RBs.append(newSet_new_RB)
-            new_RB = newSet_new_RB
-
-        # find the most active PO, and if that PO has already caused a PO to be inferred in newSet, learn connections between the inferred PO and active semantics and the new_RB, or otherwise infer a PO in newSet to match the most active PO
-        most_active_PO = get_most_active_unit(memory.driver.POs)
-        if most_active_PO.my_made_unit:
-            # update my newSet unit (set activation to 1.0, connect to active semantics).
-            most_active_PO.my_made_unit.act = 1.0
-            for semantic in memory.semantics:
-                # check if I am connected to the newSet myPO. If yes, update my connection based on semantic activation. If not, and I am active, infer a connection.
-                connected_to_newSetPO = False
-                # check all the semantic's Links. If any of the semantic Links are to the newSet_PO, set connected_to_newSetPO to True (i.e., don't make a Link for the current semantic and the newSet_PO because one already exits), and update the connection between the newSet_PO and the current semantic by a simple Hebbian rule.
-                for Link in semantic.myPOs:
-                    if most_active_PO.my_made_unit == Link.myPO:
-                        # update the connection weight.
-                        Link.weight += (1*(Link.mySemantic.act-Link.weight)*gamma)
-                        connected_to_newSetPO = True
-
-                # if not connected_to_newPO, then learn a connection if semantic.act > 0.
-                if (not connected_to_newSetPO) and (semantic.act > 0):
-                    # infer a new Link for new PO and active semantic.
-                    new_Link = dataTypes.Link(most_active_PO.my_made_unit, 'nil', semantic, 0.0)
-                    # update the weight of the Link.
-                    new_Link.weight = 1*(semantic.act-0)*gamma
-                    # connect new Link to semantic and new pred and add Link to memory.Links.
-                    most_active_PO.my_made_unit.mySemantics.append(new_Link)
-                    semantic.myPOs.append(new_Link)
-                    memory.Links.append(new_Link)
-
-            # learn connection between inferred PO and new_RB if none already exists
-            if most_active_PO.predOrObj == 1:
-                if most_active_PO.my_made_unit not in new_RB.myPred:
-                    new_RB.myPred.append(most_active_PO.my_made_unit)
-                    most_active_PO.my_made_unit.myRBs.append(new_RB)
-            else:
-                if most_active_PO.my_made_unit not in new_RB.myObj:
-                    new_RB.myObj.append(most_active_PO.my_made_unit)
-                    most_active_PO.my_made_unit.myRBs.append(new_RB)
-        else: # I have not caused a unit to be inferred.
-            # infer a newSet PO unit (with activation 1.0) and add it to memory. Set the value of the .myanalog field to 'null', as you will create an analog to house all newSet units at the end of the .doCompression() routine
-            # give the new PO the name 'nil' + the len(memory.POs)+1.
-            new_PO_name = 'nil' + str(len(memory.POs)+1)
-            # new_PO_name = 'new_' + most_active_PO.name
-            newSet_new_PO = dataTypes.POUnit(new_PO_name, 'memory', 0, True, 'null', most_active_PO.predOrObj) # ekaterina 'memory' instead of 'newSet'
-            newSet_new_PO.act = 1.0
-            newSet_new_PO.my_maker_unit = most_active_PO
-            most_active_PO.my_made_unit = newSet_new_PO
-
-            memory.POs.append(newSet_new_PO)
-            # memory.newSet.POs.append(newSet_new_PO)
-
-        return memory, new_RB
-
-    # function to unpack compressed predicates
-    def do_unpacking(self, memory): # ekaterina
+    # ekaterina: function to unpack compressed predicates
+    def do_unpacking(self, memory):
         # make sure DORA is in DORA mode.
         DORA_state = self.asDORA
         self.asDORA = True
@@ -1024,12 +928,10 @@ class runDORA(object):
             pause = False
             for event in pygame.event.get():
                 if not hasattr(event,'key'):
-                    # pause = True # ekaterina
-                    continue # ekaterina
+                    continue
                 elif event.key == K_p and event.type == KEYDOWN:
                     # graphics are paused, wait for unpause.
-                    pause = True # ekaterina
-                    # continue # ekaterina
+                    pause = True
             if pause:
                 wait = True
                 while wait:
@@ -3225,12 +3127,10 @@ def attach_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
                 less_semantic.myPOs.append(less_link)
                 memory.Links.append(less_link)
         # reduce weight to absolute value semantics to .5 (as this process constitutes a comparison).
-        #for link in sem_link_PO: # ekaterina
-            #link.weight /= 2   # ekaterina
-        sem_link_PO.weight /= 2
-        #for link in sem_link_PO2: # ekaterina
-            #link.weight /= 2    # ekaterina
-        sem_link_PO2.weight /= 2
+        for link in sem_link_PO: # ekaterina
+            link.weight /= 2
+        for link in sem_link_PO2: # ekaterina
+            link.weight /= 2
     # return memory.
     return memory
 
@@ -3639,109 +3539,51 @@ def find_objs_compression(driver):
     # returns.
     return objs_compression
 
-# function to perform compression operations.
+# ekaterina: major overhaul of the function to perform compression operations
 def compression_routine(memory, made_RB, compressedPO, ho_sem, gamma):
     # find the most active PO
     most_active_PO = get_most_active_unit(memory.driver.POs)
 
-    # if there is no made_RB, make one, and set made_RB to that RB.
-    if not made_RB:
-        # newSet_new_RB = dataTypes.RBUnit('nil', 'newSet', 0, True, 'null')
-        made_RB = dataTypes.RBUnit('nil', 'memory', 0, True, 'null') # ekaterina 'memory' instead of 'newSet'
-        made_RB.act = 1.0
-        memory.RBs.append(made_RB)
-        # memory.newSet.RBs.append(made_RB)
-        # made_RB = newSet_new_RB
+    if most_active_PO.predOrObj == 0:
+        # recruit a new PO unit to detokenize the most_active_PO unit
+        memory, made_RB = create_PO_copy(memory, most_active_PO, made_RB, gamma)
 
-        # ekaterina: also make a compressed predicate
-        newPOname = ''
-        # a name for a new cumulative predicate which consists of names of all the active predicates
-        for pred in most_active_PO.same_RB_POs:
-            newPOname += pred.name
-        compressedPO = dataTypes.POUnit(newPOname, 'memory', 0, True, 'null', 1) # ekaterina 'memory' instead of 'newSet'
-        compressedPO.act = 1.0
+        # if there is no compressed predicate yet, make one
+        if not compressedPO:
+            # a name for a new cumulative predicate which consists of names of all the active predicates
+            newPOname = ''
+            for pred in most_active_PO.same_RB_POs:
+                newPOname += pred.name
+            compressedPO = dataTypes.POUnit(newPOname, 'memory', 0, True, 'null', 1) # ekaterina 'memory' instead of 'newSet'
+            compressedPO.act = 1.0
 
-        compressedPO.my_maker_unit = made_RB
-        made_RB.my_made_unit = compressedPO
+            compressedPO.my_maker_unit = made_RB
+            made_RB.my_made_unit = compressedPO
 
-        memory.POs.append(compressedPO)
-        # memory.newSet.POs.append(compressedPO)
-        # compressedPO = newSet_new_PO
+            memory.POs.append(compressedPO)
+            # memory.newSet.POs.append(compressedPO)
+            # compressedPO = newSet_new_PO
 
-        # ekaterina: learn connection between made_RB and compressed predicate
-        made_RB.myPred.append(compressedPO)
-        compressedPO.myRBs.append(made_RB)
+            # ekaterina: learn connection between made_RB and compressed predicate
+            made_RB.myPred.append(compressedPO)
+            compressedPO.myRBs.append(made_RB)
 
-    # if the most active PO has already caused a PO to be inferred in newSet, learn connections between the inferred PO and active semantics and the made_RB, or otherwise infer a PO in newSet to match the most active PO.
-    if most_active_PO.predOrObj == 0 and most_active_PO.my_made_unit:
-        most_active_PO.my_made_unit.act = 1.0
-        for semantic in memory.semantics:
-            # check if I am connected to the newSet myPO. If yes, update my connection based on semantic activation. If not, and I am active, infer a connection.
-            connected_to_newSetPO = False
-            # check all the semantic's Links. If any of the semantic Links are to the newSet_PO, set connected_to_newSetPO to True (i.e., don't make a Link for the current semantic and the newSet_PO because one already exits), and update the connection between the newSet_PO and the current semantic by a simple Hebbian rule.
-            for Link in semantic.myPOs:
-                if most_active_PO.my_made_unit == Link.myPO:
-                    # update the connection weight.
-                    Link.weight += (1*(Link.mySemantic.act-Link.weight)*gamma)
-                    connected_to_newSetPO = True
-
-            # if not connected_to_newPO, then learn a connection if semantic.act > 0.
-            if (not connected_to_newSetPO) and (semantic.act > 0):
-                # infer a new Link for new PO and active semantic.
-                new_Link = dataTypes.Link(most_active_PO.my_made_unit, 'nil', semantic, 0.0)
-                # update the weight of the Link.
-                new_Link.weight = 1*(semantic.act-0)*gamma
-                # connect new Link to semantic and new pred and add Link to memory.Links.
-                most_active_PO.my_made_unit.mySemantics.append(new_Link)
-                semantic.myPOs.append(new_Link)
-                memory.Links.append(new_Link)
-
-    elif most_active_PO.predOrObj == 1 and ho_sem:
-        # if a semantic of a predicate is already connected to a higher order semantic, update the connection weight between them; the weights are stored in ho_sem
-        for link in most_active_PO.mySemantics:
-            if link.mySemantic in ho_sem.semConnect:
-                semIndex = ho_sem.semConnect.index(link.mySemantic)
-                currWeight = ho_sem.semConnectWeights[semIndex]
-                ho_sem.semConnectWeights[semIndex] += (1*(link.mySemantic.act-currWeight)*gamma)
-            else: # if not connected yet, learn a connection if semantic.act > 0
-                if link.mySemantic.act > 0:
-                    ho_sem.semConnect.append(link.mySemantic)
-                    link.mySemantic.semConnect.append(ho_sem)
-                    # weight between semantic and ho_sem are stored in the ho_sem in the list .semConnectWeights; initialize the weight
+    else: # if most_active_PO.predOrObj == 1
+        if ho_sem: # if a role to be compressed already recruited a new higher order semantic
+            # if a semantic of a predicate is already connected to a higher order semantic, update the connection weight between them; the weights are stored in ho_sem
+            for link in most_active_PO.mySemantics:
+                if link.mySemantic in ho_sem.semConnect:
                     semIndex = ho_sem.semConnect.index(link.mySemantic)
-                    ho_sem.semConnectWeights[semIndex] = 1*(link.mySemantic.act-0)*gamma
-
-        # learn connection between inferred PO and made_RB if none already exists; # ekaterina: only for the objects, predicates will not be creating copies of themselves
-        # if most_active_PO.predOrObj == 0:
-        #     # if most_active_PO.my_made_unit not in made_RB.myPred:
-        #     #     made_RB.myPred.append(most_active_PO.my_made_unit)
-        #     #     most_active_PO.my_made_unit.myRBs.append(made_RB)
-        # # else:
-        #     if most_active_PO.my_made_unit not in made_RB.myObj:
-        #         made_RB.myObj.append(most_active_PO.my_made_unit)
-        #         most_active_PO.my_made_unit.myRBs.append(made_RB)
-    else: # I have not caused a unit to be inferred (for object) or has not created an ho_sem
-        # infer a newSet PO unit (with activation 1.0) and add it to memory. Set the value of the .myanalog field to 'null', as you will create an analog to house all newSet units at the end of the .doCompression() routine above.
-        # give the new PO the name 'nil' + the len(memory.POs)+1.
-        # new_PO_name = 'nil' + str(len(memory.POs)+1)
-        if most_active_PO.predOrObj == 0:
-            new_PO_name = 'new_' + most_active_PO.name
-            newSet_new_PO = dataTypes.POUnit(new_PO_name, 'memory', 0, True, 'null', 0) # ekaterina 'memory' instead of 'newSet'
-            newSet_new_PO.act = 1.0
-            newSet_new_PO.my_maker_unit = most_active_PO
-            most_active_PO.my_made_unit = newSet_new_PO
-
-            memory.POs.append(newSet_new_PO)
-            # print('\n' + newSet_new_PO.name + '\n')
-            # memory.newSet.POs.append(newSet_new_PO)
-
-            # ekaterina: learn connection between made_RB and the newly created copy of the object
-            made_RB.myObj.append(newSet_new_PO)
-            newSet_new_PO.myRBs.append(made_RB)
-
-        # if the most active PO is a pred, recruit a new higher order semantic, and set ho_sem to that semantic.
-        else: # if most_active_PO.predOrObj == 1:
-            # check if this ho_sem already exists in memory; if if does not, recruit a new higher-order semantic unit
+                    currWeight = ho_sem.semConnectWeights[semIndex]
+                    ho_sem.semConnectWeights[semIndex] += (1*(link.mySemantic.act-currWeight)*gamma)
+                else: # if not connected yet, learn a connection if semantic.act > 0
+                    if link.mySemantic.act > 0:
+                        ho_sem.semConnect.append(link.mySemantic)
+                        link.mySemantic.semConnect.append(ho_sem)
+                        # weight between semantic and ho_sem are stored in the ho_sem in the list .semConnectWeights; initialize the weight
+                        semIndex = ho_sem.semConnect.index(link.mySemantic)
+                        ho_sem.semConnectWeights[semIndex] = 1*(link.mySemantic.act-0)*gamma
+        else: # if a higher order semantic for a role to be compressed in not recruited yet recruit a new higher-order semantic unit
             sem_name = 'ho_sem_' + most_active_PO.name
             recruitHO = True
             for sem in memory.semantics:
@@ -3881,7 +3723,7 @@ def unpacking_routine(memory, made_RBs, gamma):
 
     return memory, made_RBs
 
-# function to count the number of higher order semantics connected to the compressed predicate
+# ekaterina: function to count the number of higher-order semantics connected to the compressed predicate
 def count_ho_sem(myPred):
     hoSemNum = 0 # to count the number of ho_sems
     for link in myPred.mySemantics:
@@ -4399,6 +4241,7 @@ def create_RB_dict(myRB, analog_counter):
     # and return the RB_dict--and, if necessry, the p_dict.
     return RB_dict, p_dict
 
+# ekaterina: function to print tokens in newSet
 def print_newSet(memory):
     print('newSet:')
     for p in memory.newSet.Ps:
@@ -4407,3 +4250,98 @@ def print_newSet(memory):
         print(rb.name)
     for po in memory.newSet.POs:
         print(po.name)
+
+# ekaterina: function to collect the rest of the units in the driver after the compression and conjoin them and the compressed part together
+def collect_the_rest(restOfRBs):
+    # do initialize network operations (steps 1-3 above).
+    self.do_1_to_3(mapping=False)
+    phase_set = 1
+    newRBs = []
+    for rb in restOfRBs:
+        # fire the object and the predicate of each RB, recruit a copy of each and also make a copy of RB in emerging recipient
+        firingOrder = []
+        firingOrder.append(rb.myPred[0])
+        firingOrder.append(rb.myObj[0])
+
+        # the copy of the current RB for the emerging proposition
+        new_RB = None
+        # fire each PO in the firing order until local inhibitor fires
+        for currentPO in firingOrder:
+            # initialize phase_set_iterator and flags (local_inhibitor_fired).
+            phase_set_iterator = 1
+            self.local_inhibitor_fired = False
+            # 4.1-4.2) Fire the current RB in the firingOrder. Update the network in discrete time-steps until the globalInhibitor fires (i.e., the current active RB is inhibited by its inhibitor).
+            while self.memory.localInhibitor.act == 0:
+                # 4.3.1-4.3.10) update network activations.
+                currentPO.act = 1.0
+                self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics)
+                # create copies of POs and connect them to a newly recruited RB
+                self.memory, new_RB = self.create_PO_copy(self.memory, new_RB, self.gamma)
+                # fire the local_inhibitor if necessary
+                self.time_step_fire_local_inhibitor()
+                # update GUI
+                if self.doGUI:
+                    self.time_step_doGUI(phase_set_iterator)
+            self.post_count_by_operations()
+        # add the newly recruited RB to the list
+        newRBs.append(new_RB)
+    return newRBs
+
+# ekaterina: function to assist do_compression() and do_unpacking(); the most active PO recruits a new unit to copy itself into and teach it connection to semantics; it also recruits a new RB unit and newly recruited PO is bound to this new RB
+def create_PO_copy(memory, most_active_PO, new_RB, gamma):
+    # if there is no new_RB, make one and assign it to new_RB
+    if not new_RB:
+        newSet_new_RB = dataTypes.RBUnit('nil', 'memory', 0, True, 'null') # ekaterina 'memory' instead of 'newSet'
+        newSet_new_RB.act = 1.0
+        memory.RBs.append(newSet_new_RB)
+        # memory.newSet.RBs.append(newSet_new_RB)
+        new_RB = newSet_new_RB
+
+    if most_active_PO.my_made_unit:
+        # update my newSet unit (set activation to 1.0, connect to active semantics).
+        most_active_PO.my_made_unit.act = 1.0
+        for semantic in memory.semantics:
+            # check if I am connected to the newSet myPO. If yes, update my connection based on semantic activation. If not, and I am active, infer a connection.
+            connected_to_newSetPO = False
+            # check all the semantic's Links. If any of the semantic Links are to the newSet_PO, set connected_to_newSetPO to True (i.e., don't make a Link for the current semantic and the newSet_PO because one already exits), and update the connection between the newSet_PO and the current semantic by a simple Hebbian rule.
+            for Link in semantic.myPOs:
+                if most_active_PO.my_made_unit == Link.myPO:
+                    # update the connection weight.
+                    Link.weight += (1*(Link.mySemantic.act-Link.weight)*gamma)
+                    connected_to_newSetPO = True
+
+            # if not connected_to_newPO, then learn a connection if semantic.act > 0.
+            if (not connected_to_newSetPO) and (semantic.act > 0):
+                # infer a new Link for new PO and active semantic.
+                new_Link = dataTypes.Link(most_active_PO.my_made_unit, 'nil', semantic, 0.0)
+                # update the weight of the Link.
+                new_Link.weight = 1*(semantic.act-0)*gamma
+                # connect new Link to semantic and new pred and add Link to memory.Links.
+                most_active_PO.my_made_unit.mySemantics.append(new_Link)
+                semantic.myPOs.append(new_Link)
+                memory.Links.append(new_Link)
+
+    else: # I have not caused a unit to be inferred.
+        # infer a newSet PO unit (with activation 1.0) and add it to memory. Set the value of the .myanalog field to 'null', as you will create an analog to house all newSet units at the end of the .doCompression() routine
+        # give the new PO the name 'nil' + the len(memory.POs)+1.
+        # new_PO_name = 'nil' + str(len(memory.POs)+1)
+        new_PO_name = 'new_' + most_active_PO.name
+        newSet_new_PO = dataTypes.POUnit(new_PO_name, 'memory', 0, True, 'null', most_active_PO.predOrObj) # ekaterina 'memory' instead of 'newSet'
+        newSet_new_PO.act = 1.0
+        newSet_new_PO.my_maker_unit = most_active_PO
+        most_active_PO.my_made_unit = newSet_new_PO
+
+        memory.POs.append(newSet_new_PO)
+        # memory.newSet.POs.append(newSet_new_PO)
+
+        # learn connection between inferred PO and new_RB if none already exists
+        if most_active_PO.predOrObj == 1:
+            if most_active_PO.my_made_unit not in new_RB.myPred:
+                new_RB.myPred.append(most_active_PO.my_made_unit)
+                most_active_PO.my_made_unit.myRBs.append(new_RB)
+        else:
+            if most_active_PO.my_made_unit not in new_RB.myObj:
+                new_RB.myObj.append(most_active_PO.my_made_unit)
+                most_active_PO.my_made_unit.myRBs.append(new_RB)
+
+    return memory, new_RB

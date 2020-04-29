@@ -2,7 +2,7 @@
 # dataType objects for DORA.
 
 # imports.
-import random, math, pdb#, numpy
+import random, math, pdb
 from dataclasses import dataclass
 # set parameters.
 
@@ -510,7 +510,7 @@ class Semantic(object):
         self.act = 0.0
         self.myPOs = [] # initialize to empty. Later it will have Links to POs.
         self.semConnect = [] # where links to other semantics are kept. Initialized to None. # ekaterina changed 'None' to empty list
-        self.semConnectWeights = [0] * 50 # the weights of the semantic-ho_sem connections; weights are stored at the indices that correpsond to the semantic in the .semConnect list # ekaterina
+        self.semConnectWeights = [0] * 50 # the weights of the semantic-ho_sem connections; weights are stored at the indices that correspond to the semantic in the .semConnect list # ekaterina
 
     def update_input(self, memory, ignore_object_semantics=False, ignore_memory_semantics=False):
         # self.myinput = 0.0 # ekaterina: if it is commented retrieval after compression does work, otherwise it does not
@@ -521,19 +521,15 @@ class Semantic(object):
                     if Link.myPO.set != 'memory':
                         if ignore_object_semantics:
                             if Link.myPO.predOrObj==1:
-                                # self.myinput += Link.myPO.act * Link.weight # ekaterina -- since the very first line in this function is commented out
-                                self.myinput = Link.myPO.act * Link.weight # ekaterina
+                                self.myinput += Link.myPO.act * Link.weight
                         else:
-                            # self.myinput += Link.myPO.act * Link.weight # ekaterina
-                            self.myinput = Link.myPO.act * Link.weight # ekaterina
+                            self.myinput += Link.myPO.act * Link.weight
                 else:
                     if ignore_object_semantics:
                         if Link.myPO.predOrObj==1:
-                            # self.myinput += Link.myPO.act * Link.weight # ekaterina
-                            self.myinput = Link.myPO.act * Link.weight # ekaterina
+                            self.myinput += Link.myPO.act * Link.weight
                     else:
-                        # self.myinput += Link.myPO.act * Link.weight # ekaterina
-                        self.myinput = Link.myPO.act * Link.weight # ekaterina
+                        self.myinput += Link.myPO.act * Link.weight
 
         # ekaterina: to activate connections between higher order semantics and regular semantics for the retrieval purposes
         if self.myinput != 0: # if a semantic was activated by a PO in the previous segment
@@ -714,7 +710,6 @@ class memorySet(object):
         self.POs = []
         self.semantics = []
         self.Links = []
-        self.LinksHO = [] # ekaterina
         self.mappingConnections = []
         self.mappingHypotheses = []
         self.localInhibitor = localInhibitor()
@@ -1226,10 +1221,3 @@ class entropyNet(object):
         #self.settled = settled
         #self.settled_delta = delta_outputs
         self.settled_iters = iterations
-
-# ekaterina
-# @dataclass
-# class LinkHO(object):
-#     hoSem: Semantic
-#     sem: Semantic
-#     weight: float

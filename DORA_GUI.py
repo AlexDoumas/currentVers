@@ -90,6 +90,8 @@ class GUI_information_class(object):
 # function to make a basic screen.
 def make_screen(screen_width, screen_height):
     screen = pygame.display.set_mode((screen_width, screen_height))
+    # NOTE: in updated pygame you need to reset the screen to black manually as status of old screen will be held over (i.e., whatever the state of the old screen variable will persist on the new screen, so old drawings on the screen will remain up and you'll just draw over them). 
+    screen.fill(BLACK)
     return screen
 
 # function to create the raw template screen.
@@ -399,7 +401,7 @@ def update_node_acts(screen, GUI_information):
     # done.
     return screen
 
-# initialize GUI
+# initialize GUI.
 def initialize_GUI(screen_width, screen_height, memory):
     # draw a screen.
     screen = make_screen(screen_width, screen_height)
