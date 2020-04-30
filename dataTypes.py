@@ -510,7 +510,7 @@ class Semantic(object):
         self.act = 0.0
         self.myPOs = [] # initialize to empty. Later it will have Links to POs.
         self.semConnect = [] # where links to other semantics are kept. Initialized to None. # ekaterina changed 'None' to empty list
-        self.semConnectWeights = [0] * 50 # the weights of the semantic-ho_sem connections; weights are stored at the indices that correspond to the semantic in the .semConnect list # ekaterina
+        self.semConnectWeights = [0.0] * 50 # the weights of the semantic-ho_sem connections; weights are stored at the indices that correspond to the semantic in the .semConnect list # ekaterina
 
     def update_input(self, memory, ignore_object_semantics=False, ignore_memory_semantics=False):
         # self.myinput = 0.0 # ekaterina: if it is commented retrieval after compression does work, otherwise it does not

@@ -1,0 +1,2 @@
+simType = 'sym_file'
+symProps = [{'name': 'non_exist', 'RBs': [{'pred_name': 'graduatehasDiploma', 'pred_sem': [['ho_sem_graduate', 1, None, None, 'HO', ['graduate1', 'graduate2', 'graduate3']], ['ho_sem_hasDiploma', 1, None, None, 'HO', ['hasDiploma1', 'hasDiploma2', 'hasDiploma3']]], 'higher_order': False, 'object_name': 'Jack', 'object_sem': ['jack1', 'jack2', 'jack3'], 'P': 'nil'}], 'set': 'memory', 'analog': 0}]

@@ -193,8 +193,32 @@ def makeAnalog(analog, memory):
                         # if makeNewSem is True, then make the new semantic unit and add it to memory.semantics, otherwise, connect the newSem (which has already been set directly above to the value of the semantic in memory.semantics that the newPred should be connected to) to newPred.
                         if makeNewSem:
                             # create the new semantic and the newLink.
+
+                            # ekaterina: check whether semantic is higher order
+                            if (type(semantic) is list) and (len(semantic) > 5): # ekaterina
+                                newSem = dataTypes.Semantic(semantic[0], semantic[2], semantic[3], semantic[4])
+                                newLink = dataTypes.Link(newPred, [], newSem, semantic[1])
+                                # ekaterina: if newSem is higher order semantic, semantic[5] contains a list of regular semantics it is connected to; create sem-ho_sem connections; first check whether regular semantics are already in memory
+                                for regSemName in semantic[5]: # ekaterina
+                                    makeRegSem = True
+                                    for oldsemantic in memory.semantics:
+                                        if regSemName == oldsemantic.name:
+                                            makeRegSem = False
+                                            regSem = oldsemantic
+                                            break
+                                    if makeRegSem: # this regular semantic is not yet in memory and needs to be recruited
+                                        regSem = dataTypes.Semantic(regSemName)
+                                        memory.semantics.append(regSem)
+                                    # connect regular semantic to higher order semantic
+                                    if newSem not in regSem.semConnect:
+                                        regSem.semConnect.append(newSem)
+                                    newSem.semConnect.append(regSem)
+                                    # update weight of the sem-ho_sem connection
+                                    myIndex = newSem.semConnect.index(regSem)
+                                    newSem.semConnectWeights[myIndex] = 1
+
                             # check wheter semantic codes a dimension or not.
-                            if (type(semantic) is list) and (len(semantic) > 4):
+                            elif (type(semantic) is list) and (len(semantic) > 4):
                                 newSem = dataTypes.Semantic(semantic[0], semantic[2], semantic[3], semantic[4])
                                 newLink = dataTypes.Link(newPred, [], newSem, semantic[1])
                             elif (type(semantic) is list) and (len(semantic) > 2):
@@ -204,7 +228,7 @@ def makeAnalog(analog, memory):
                                 newSem = dataTypes.Semantic(semantic[0])
                                 newLink = dataTypes.Link(newPred, [], newSem, semantic[1])
                             else:
-                                # default to a semantic with a weight of 1. 
+                                # default to a semantic with a weight of 1.
                                 newSem = dataTypes.Semantic(semantic)
                                 newLink = dataTypes.Link(newPred, [], newSem, 1)
                             # add newLink to newSem and newPred, and add newLink to currentLinks, and newSem to memory.semantics.
@@ -213,8 +237,8 @@ def makeAnalog(analog, memory):
                             memory.Links.append(newLink)
                             memory.semantics.append(newSem)
                         else:
-                            # create the newLink. 
-                            # if semantic is a list, then use semantic[1] for the weight, else default to a weight of 1. 
+                            # create the newLink.
+                            # if semantic is a list, then use semantic[1] for the weight, else default to a weight of 1.
                             if type(semantic) is list:
                                 newLink = dataTypes.Link(newPred, [], newSem, semantic[1])
                             else:
@@ -278,7 +302,7 @@ def makeAnalog(analog, memory):
                                 newSem = dataTypes.Semantic(semantic[0])
                                 newLink = dataTypes.Link(newObject, [], newSem, semantic[1])
                             else:
-                                # default to a semantic with a weight of 1. 
+                                # default to a semantic with a weight of 1.
                                 newSem = dataTypes.Semantic(semantic)
                                 newLink = dataTypes.Link(newObject, [], newSem, 1)
                             # add newLink to newSem and newPred, and add newLink to currentLinks, and newSem to memory.semantics.
@@ -287,8 +311,8 @@ def makeAnalog(analog, memory):
                             memory.Links.append(newLink)
                             memory.semantics.append(newSem)
                         else:
-                            # create the newLink. 
-                            # if semantic is a list, then use semantic[1] for the weight, else default to a weight of 1. 
+                            # create the newLink.
+                            # if semantic is a list, then use semantic[1] for the weight, else default to a weight of 1.
                             if type(semantic) is list:
                                 newLink = dataTypes.Link(newObject, [], newSem, semantic[1])
                             else:
@@ -319,12 +343,8 @@ def makeAnalog(analog, memory):
                         break
                 if not foundChildP:
                     print('You are trying to create a higher-order proposition with a child P that does not exist. Please check your sym file.')
-    # now make sure all the weights in all the links are represented as floats. 
+    # now make sure all the weights in all the links are represented as floats.
     for Link in memory.Links:
         Link.weight = float(Link.weight)
     # done.
     return memory
-
-
-
-
