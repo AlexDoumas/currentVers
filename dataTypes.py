@@ -512,8 +512,9 @@ class Semantic(object):
         self.semConnect = [] # where links to other semantics are kept. Initialized to None. # ekaterina changed 'None' to empty list
         self.semConnectWeights = [0.0] * 50 # the weights of the semantic-ho_sem connections; weights are stored at the indices that correspond to the semantic in the .semConnect list # ekaterina
 
-    def update_input(self, memory, ignore_object_semantics=False, ignore_memory_semantics=False):
-        # self.myinput = 0.0 # ekaterina: if it is commented retrieval after compression does work, otherwise it does not
+    def update_input(self, memory, retrieval_license, ignore_object_semantics=False, ignore_memory_semantics=False):
+        if not retrieval_license: # ekaterina: to make retrieval after compression work
+            self.myinput = 0.0
         for Link in self.myPOs:
             # make sure that I'm not getting input from newSet POs, that I'm ignoring input from object POs if ignore_object_semantics == True, and that I'm not getting input from memory units during retrieval if ignore_memory_semantics == True.
             if Link.myPO.set != 'newSet':
@@ -532,16 +533,17 @@ class Semantic(object):
                         self.myinput += Link.myPO.act * Link.weight
 
         # ekaterina: to activate connections between higher order semantics and regular semantics for the retrieval purposes
-        if self.myinput != 0: # if a semantic was activated by a PO in the previous segment
-            if self.ont_status == 'HO': # if it is ho_sem then update input of all regular semantics it is connected to
-                for sem in self.semConnect:
-                    # semIndex = self.semConnect.index(sem) # weights are used to activate ho_sem by regular sems but not vice versa ??
-                    sem.myinput = self.myinput #* self.semConnectWeights[semIndex]
-            elif self.ont_status == 'state':
-                if self.semConnect: # if I am a regular semantic, check if there are any ho_sems connected to me; if there are, update their input
-                    for ho_sem in self.semConnect:
-                        myIndex = ho_sem.semConnect.index(self)
-                        ho_sem.myinput = self.myinput * ho_sem.semConnectWeights[myIndex]
+        if retrieval_license:
+            if self.myinput != 0: # if a semantic was activated by a PO in the previous segment
+                if self.ont_status == 'HO': # if it is ho_sem then update input of all regular semantics it is connected to
+                    for sem in self.semConnect:
+                        # semIndex = self.semConnect.index(sem) # weights are used to activate ho_sem by regular sems but not vice versa ??
+                        sem.myinput = self.myinput #* self.semConnectWeights[semIndex]
+                elif self.ont_status == 'state':
+                    if self.semConnect: # if I am a regular semantic, check if there are any ho_sems connected to me; if there are, update their input
+                        for ho_sem in self.semConnect:
+                            myIndex = ho_sem.semConnect.index(self)
+                            ho_sem.myinput = self.myinput * ho_sem.semConnectWeights[myIndex]
 
     def set_max_input(self, max_input):
         self.max_sem_input = max_input

@@ -145,7 +145,7 @@ class runDORA(object):
                     while self.memory.globalInhibitor.act == 0:
                         # 4.3.1-4.3.10) update network activations.
                         currentRB.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics)
+                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False) # ekaterina: added retrieval_license
                         # 4.3.11) Update mapping hypotheses.
                         self.memory = update_mappingHyps(self.memory)
                         # fire the local_inhibitor if necessary.
@@ -172,7 +172,7 @@ class runDORA(object):
                     while self.memory.localInhibitor.act == 0:
                         # 4.3.1-4.3.10) update network activations.
                         currentPO.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics)
+                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False) # ekaterina: added retrieval_license
                         # 4.3.11) Update mapping hypotheses.
                         self.memory = update_mappingHyps(self.memory)
                         # fire the local_inhibitor if necessary.
@@ -209,7 +209,7 @@ class runDORA(object):
                     while self.memory.globalInhibitor.act == 0:
                         # 4.3.1-4.3.10) update network activations.
                         currentRB.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics)
+                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=True) # ekaterina: added retrieval_license
                         # 4.3.12) Run retrieval routines.
                         self.memory = retrieval_routine(self.memory, self.asDORA, self.gamma, self.delta, self.HebbBias, self.lateral_input_level, self.bias_retrieval_analogs)
                         # fire the local_inhibitor if necessary.
@@ -233,7 +233,7 @@ class runDORA(object):
                     while self.memory.localInhibitor.act == 0:
                         # 4.3.1-4.3.10) update network activations.
                         currentPO.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics)
+                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=True) # ekaterina: added retrieval_license
                         # 4.3.12) Run retrieval routines.
                         self.memory = retrieval_routine(self.memory, self.asDORA, self.gamma, self.delta, self.HebbBias, self.lateral_input_level, self.bias_retrieval_analogs)
                         # fire the local_inhibitor if necessary.
@@ -264,7 +264,7 @@ class runDORA(object):
                     while phase_set_iterator < 7:
                         # 4.3.1-4.3.10) update network activations.
                         currentRB.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics)
+                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=True) # ekaterina: added retrieval_license
                         # 4.3.12) Run retrieval routines.
                         self.memory = retrieval_routine(self.memory, self.asDORA, self.gamma, self.delta, self.HebbBias, self.lateral_input_level, self.bias_retrieval_analogs)
                         # update GUI.
@@ -286,7 +286,7 @@ class runDORA(object):
                     while phase_set_iterator < 4:
                         # 4.3.1-4.3.10) update network activations.
                         currentPO.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics)
+                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=True) # ekaterina: added retrieval_license
                         # 4.3.12) Run retrieval routines.
                         self.memory = retrieval_routine(self.memory, self.asDORA, self.gamma, self.delta, self.HebbBias, self.lateral_input_level, self.bias_retrieval_analogs)
                         # update GUI.
@@ -369,7 +369,7 @@ class runDORA(object):
                 for iter_i in range(10):
                     # update semantic inputs.
                     for semantic in self.memory.semantics:
-                        semantic.update_input(self.memory, self.ignore_object_semantics, self.ignore_memory_semantics)
+                        semantic.update_input(self.memory, retrieval_license, self.ignore_object_semantics, self.ignore_memory_semantics)
                     # update sematnic activations.
                     max_input = get_max_sem_input(self.memory)
                     for semantic in self.memory.semantics:
@@ -413,7 +413,7 @@ class runDORA(object):
                 while self.memory.localInhibitor.act == 0:
                     # 4.3.1-4.3.10) update network activations.
                     currentPO.act = 1.0
-                    self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics)
+                    self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False) # ekaterina: added retrieval_license
                     # 4.3.13.1) Do predication.
                     self.memory, made_new_pred = predication_routine(self.memory, made_new_pred, self.gamma)
                     self.time_step_fire_local_inhibitor()
@@ -490,7 +490,7 @@ class runDORA(object):
                         while self.memory.globalInhibitor.act == 0:
                             # 4.3.1-4.3.10) update network activations.
                             currentRB.act = 1.0
-                            self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics)
+                            self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False) # ekaterina: added retrieval_license
                             # 4.3.13.2) Do whole-relation formation.
                             self.memory, inferred_new_P = rel_form_routine(self.memory, inferred_new_P)
                             # fire the local_inhibitor if necessary.
@@ -571,7 +571,7 @@ class runDORA(object):
                         while self.memory.globalInhibitor.act == 0:
                             # 4.3.1-4.3.10) update network activations.
                             currentRB.act = 1.0
-                            self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics)
+                            self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False) # ekaterina: added retrieval_license
                             # 4.3.13.3) Do schematization/predicate refinement.
                             self.memory = schematization_routine(self.memory, self.gamma, phase_set_iterator)
                             # fire the local_inhibitor if necessary.
@@ -618,7 +618,7 @@ class runDORA(object):
                         while self.memory.globalInhibitor.act == 0:
                             # 4.3.1-4.3.10) update network activations.
                             currentRB.act = 1.0
-                            self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics)
+                            self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False) # ekaterina: added retrieval_license
                             # 4.3.14) Do relational inference.
                             self.memory = rel_gen_routine(self.memory, self.gamma, recip_analog)
                             # fire the local_inhibitor if necessary.
@@ -671,7 +671,7 @@ class runDORA(object):
                     while self.memory.localInhibitor.act == 0:
                         # 4.3.1-4.3.10) update network activations.
                         currentPO.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics)
+                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False) # ekaterina: added retrieval_license
                         # Do compression.
                         self.memory, made_RB, compressedPO, ho_sem = compression_routine(self.memory, made_RB, compressedPO, ho_sem, self.gamma)
                         # fire the local_inhibitor if necessary.
@@ -785,7 +785,7 @@ class runDORA(object):
                 while self.memory.localInhibitor.act == 0:
                     # 4.3.1-4.3.10) update network activations.
                     currentPO.act = 1.0
-                    self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics)
+                    self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False)
                     # infer copies of POs and connect them to a newly recruited RB
                     memory, new_RB = infer_RB(memory, new_RB)
                     self.memory, new_RB = infer_PO(self.memory, new_RB, self.gamma)
@@ -833,7 +833,7 @@ class runDORA(object):
                     while self.memory.localInhibitor.act == 0:
                         # 4.3.1-4.3.10) update network activations.
                         currentPO.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics)
+                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False)
                         # Do compression.
                         self.memory, made_RBs = unpacking_routine(self.memory, made_RBs, self.gamma, self.tokenize)
                         # fire the local_inhibitor if necessary.
@@ -869,7 +869,7 @@ class runDORA(object):
         else:
             print('There are no predicates in the memory that could be unpacked')
             return
-    
+
     ######################################################################
     ######################################################################
     ######################################################################
@@ -879,7 +879,7 @@ class runDORA(object):
     ######################################
     # functions implementing operations performed during a single time-step in DORA.
     # function to perform basic network activation update for a time_step in the phase set.
-    def time_step_activations(self, phase_set, ignore_object_semantics=False, ignore_memory_semantics=False):
+    def time_step_activations(self, phase_set, ignore_object_semantics=False, ignore_memory_semantics=False, retrieval_license=False): # ekaterina: added retrieval_license
         # initialize the input to all tokens and semantic units.
         self.memory = initialize_input(self.memory)
         # 4.3.2) Update modes of all P units in the driver and the recipient.
@@ -912,7 +912,7 @@ class runDORA(object):
         # 4.3.8) Update input to semantic units.
         for semantic in self.memory.semantics:
             # ignore input to semantic units from POs in object mode if ignore_object_semantics==True (i.e., if DORA is focusing on relational properties (from Hummel & Holyoak, 2003)).
-            semantic.update_input(self.memory, ignore_object_semantics, ignore_memory_semantics)
+            semantic.update_input(self.memory, retrieval_license, ignore_object_semantics, ignore_memory_semantics)
         # 4.3.9) Update input to all tokens in the recipient and emerging recipient (i.e., newSet).
         self.memory = update_recipient_inputs(self.memory, self.asDORA, phase_set, self.lateral_input_level, self.ignore_object_semantics)
         self.memory = update_newSet_inputs(self.memory)
@@ -2423,7 +2423,7 @@ def reset_mappingHyps(memory):
 
 # update mapping connections.
 def update_mappingConnections(memory, eta):
-    # first step: divisively normalize all mapping hypotheses. For each mappng hypothesis divide it by the highest hypothesis of either unit involved in that hypothesis. For example, for the mapping hypothesis between P[i] and P[j] divide by max(max(hypothesis involving P[i]), max(hypothesis involving P[j])). 
+    # first step: divisively normalize all mapping hypotheses. For each mappng hypothesis divide it by the highest hypothesis of either unit involved in that hypothesis. For example, for the mapping hypothesis between P[i] and P[j] divide by max(max(hypothesis involving P[i]), max(hypothesis involving P[j])).
     for hypothesis in memory.mappingHypotheses:
         hypothesis.max_hyp = hypothesis.hypothesis
         for hyp in hypothesis.driverToken.mappingHypotheses:
