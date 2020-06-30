@@ -38,8 +38,7 @@ network.memory = basicRunDORA.findDriverRecipient(network.memory)
 
 # other useful ops.
 basicRunDORA.swap_driverRecipient(network.memory)
-#network.memory = basicRunDORA.findDriverRecipient(network.memory)
-network.do_compression()
+network.memory = basicRunDORA.findDriverRecipient(network.memory)
 
 # DORA operations run operatons. 
 network.do_retrieval()
@@ -47,6 +46,7 @@ network.do_map()
 network.do_entropy_ops_between()
 network.do_entropy_ops_within(pred_only=True)
 network.do_compression()
+network.do_unpacking()
 pred_ok = basicRunDORA.predication_requirements(network.memory)
 if pred_ok:
     network.do_predication()
