@@ -40,7 +40,10 @@ class runDORA(object):
         self.recent_analog_bias = parameters['recent_analog_bias']
         self.bias_retrieval_analogs = parameters['bias_retrieval_analogs']
         self.use_relative_act = parameters['use_relative_act']
+        self.ho_sem_act_flow = parameters['ho_sem_act_flow'] # allows flow of activation; 0: only from regular semantics to higher-order semantics; 1: only from higher-order semantics to regular semantics; 2: in both directions
         self.tokenize = parameters['tokenize'] # ekaterina: the parameter for unpacking; if tokenize == True: create two copies of unpacked object in memory bound to two roles in two different analogs; if tokenize == False: create one object bound to two unpacked roles in one analog
+        self.remove_uncompressed = parameters['remove_uncompressed']  # ekaterina: allows to choose whether to delete or to leave the original uncompressed structure from LTM after do_compress()
+        self.remove_compressed = parameters['remove_compressed']  # ekaterina: allows to choose whether to delete or to leave the original compressed structure from LTM after do_unpacking()
         if run_on_iphone:
             self.doGUI = False
         else:
@@ -369,7 +372,7 @@ class runDORA(object):
                 for iter_i in range(10):
                     # update semantic inputs.
                     for semantic in self.memory.semantics:
-                        semantic.update_input(self.memory, retrieval_license, self.ignore_object_semantics, self.ignore_memory_semantics)
+                        semantic.update_input(self.memory, self.ho_sem_act_flow, retrieval_license, self.ignore_object_semantics, self.ignore_memory_semantics)
                     # update sematnic activations.
                     max_input = get_max_sem_input(self.memory)
                     for semantic in self.memory.semantics:
@@ -631,6 +634,8 @@ class runDORA(object):
                         self.post_count_by_operations()
                     # phase_set is over.
                     self.post_phase_set_operations(retrieval_license=False, map_license=False)
+        # make sure that any new items (i.e., those in the newSet) are part of an analog.
+        self.memory = newSet_items_to_analog(self.memory) # ekaterina
         # return .asDORA state to starting .asDORA state.
         self.asDORA = DORA_state
 
@@ -640,7 +645,6 @@ class runDORA(object):
         self.asDORA = True
         # make sure there are objects bound to multiple preds, and make a list of those objects.
         to_compress_objects = find_objs_compression(self.memory.driver)
-
         if len(to_compress_objects) > 0:
             # do initialize network operations (steps 1-3 above).
             self.do_1_to_3(mapping=False)
@@ -682,7 +686,7 @@ class runDORA(object):
                     # PO firing is OVER.
                     self.post_count_by_operations()
 
-                # ekaterina: create a new analog and populate it with the made_RB and all POs bound to made_RB
+                # create a new analog and populate it with the made_RB and all POs bound to made_RB
                 new_analog = dataTypes.Analog()
                 self.memory.analogs.append(new_analog)
                 new_analog.myRBs.append(made_RB)
@@ -692,7 +696,7 @@ class runDORA(object):
                 new_analog.myPOs.append(made_RB.myObj[0])
                 made_RB.myObj[0].myanalog = new_analog
 
-                # ekaterina: construct the rest of the proposition with the rest of the predicates and objects from the same analog as the predicates to compress
+                # construct the rest of the proposition with the rest of the predicates and objects from the same analog as the predicates to compress
                 restOfPOs, restOfRBs = [], []
                 for myPO in current_obj_analog.myPOs:
                     if myPO.predOrObj == 0 and len(myPO.same_RB_POs) == 1:
@@ -711,7 +715,8 @@ class runDORA(object):
                     newRBs = self.collect_the_rest(restOfRBs)
 
                     # create a new P unit
-                    newSetNewP = dataTypes.PUnit('nil', 'memory', 0, True, 'null') # ekaterina 'memory' instead of 'newSet'
+                    newPname = 'nil' + str(len(self.memory.Ps)+1)
+                    newSetNewP = dataTypes.PUnit(newPname, 'memory', 0, True, 'null') # ekaterina 'memory' instead of 'newSet'
                     newSetNewP.mode = 0
                     newSetNewP.act = 1.0
                     newSetNewP.my_maker_unit = made_RB
@@ -740,16 +745,18 @@ class runDORA(object):
                     newSetNewP.myRBs.append(made_RB)
                     made_RB.myParentPs.append(newSetNewP)
 
-                # remove the original uncompressed structures from memory since the compressed structure is unpackable; do it through the current_obj_analog
-                for i in range(len(current_obj_analog.myPs)):
-                    self.memory.Ps.remove(current_obj_analog.myPs[i])
-                for i in range(len(current_obj_analog.myRBs)):
-                    self.memory.RBs.remove(current_obj_analog.myRBs[i])
-                for i in range(len(current_obj_analog.myPOs)):
-                    self.memory.POs.remove(current_obj_analog.myPOs[i])
+                # if 'remove_uncompressed' is True delete the original uncompressed structure from LTM
+                if self.remove_uncompressed:
+                    # remove the original uncompressed structures from memory since the compressed structure is unpackable; do it through the current_obj_analog
+                    for i in range(len(current_obj_analog.myPs)):
+                        self.memory.Ps.remove(current_obj_analog.myPs[i])
+                    for i in range(len(current_obj_analog.myRBs)):
+                        self.memory.RBs.remove(current_obj_analog.myRBs[i])
+                    for i in range(len(current_obj_analog.myPOs)):
+                        self.memory.POs.remove(current_obj_analog.myPOs[i])
 
-                # remove current_obj_analog as well
-                self.memory.analogs.remove(current_obj_analog)
+                    # remove current_obj_analog as well
+                    self.memory.analogs.remove(current_obj_analog)
 
             # put all items in new_set are in an analog.
             self.memory = newSet_items_to_analog(self.memory)
@@ -762,7 +769,7 @@ class runDORA(object):
         # return .asDORA state to starting .asDORA state.
         self.asDORA = DORA_state
 
-    # ekaterina: function to collect the rest of the units in the driver after the compression and conjoin them and the compressed part together
+    # ekaterina: function to collect the rest of the units in the driver after the compression/unpacking and conjoin them and the compressed/unpacked part together
     def collect_the_rest(self, restOfRBs):
         # do initialize network operations (steps 1-3 above).
         self.do_1_to_3(mapping=False)
@@ -787,7 +794,7 @@ class runDORA(object):
                     currentPO.act = 1.0
                     self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False)
                     # infer copies of POs and connect them to a newly recruited RB
-                    memory, new_RB = infer_RB(memory, new_RB)
+                    self.memory, new_RB = infer_RB(self.memory, new_RB)
                     self.memory, new_RB = infer_PO(self.memory, new_RB, self.gamma)
                     # fire the local_inhibitor if necessary
                     self.time_step_fire_local_inhibitor()
@@ -795,35 +802,38 @@ class runDORA(object):
                     if self.doGUI:
                         self.time_step_doGUI(phase_set_iterator)
                 self.post_count_by_operations()
+                # to make sure this function is reusable by the same tokens in do_unpacking()
+                currentPO.my_made_unit = None
+                currentPO.my_made_units = []
             # add the newly recruited RB to the list
             newRBs.append(new_RB)
         return newRBs
 
     # ekaterina: function to unpack compressed predicates
-    def do_unpacking(self, memory):
+    def do_unpacking(self):
         # make sure DORA is in DORA mode.
         DORA_state = self.asDORA
         self.asDORA = True
         # make sure there are objects bound to multiple preds, and make a list of those objects.
-        to_unpack_objects = find_objs_unpacking(self.memory.driver)
-        if len(to_unpack_objects) > 0:
+        to_unpack_preds = find_preds_to_unpack(self.memory.driver)
+        # print('to_unpack_preds: ' + str(to_unpack_preds[0].name) + '\n')
+        if len(to_unpack_preds) > 0:
             # do initialize network operations (steps 1-3 above).
             self.do_1_to_3(mapping=False)
             # set phase_set to 1 (NOTE: this step doesn't really matter, but I want to keep phase_set informatio for all operations).
             phase_set = 1
-            # for each object in to_unpack_objects, add its predicate to the firing order and create copies of everything to unpack to prop
-            for obj in to_unpack_objects:
-                # the object controls firing. Fire the object, and infer a copy of object and RB in emerging recipient. Then, fire each pred and learn an unpacked version for eacj ho_sem in emerging recipient
+            # for each predicate in to_unpack_preds, add its object to the firing order and create copies of everything to unpack in prop
+            for pred in to_unpack_preds:
+                # the predicate controls firing. Fire the predicate and learn an unpacked version for each ho_sem in emerging recipient; then fire object bound to the compressed predicate and infer a copy of it in an energing recipient
                 # make a firing order of POs.
-                firingOrder = [obj]
-                for myPO in obj.same_RB_POs:
+                firingOrder = [pred]
+                for myPO in pred.same_RB_POs:
                     firingOrder.append(myPO)
-
-                # get the analog of the current to_unpack_object
-                current_obj_analog = obj.myanalog
-                # each compressed object will need two new RBs that bound the object to roles unpacked from the compressed predicate
+                # get the analog of the current to_unpack_pred
+                current_pred_analog = pred.myanalog
+                # each compressed predicate will need two new RBs that bound the roles unpacked from the compressed predicate to the object
                 made_RBs = []
-                # fire each object in the firing order until local inhibitor fires
+                # fire each PO in the firing order until local inhibitor fires
                 for currentPO in firingOrder:
                     # initialize phase_set_iterator and flags (local_inhibitor_fired).
                     phase_set_iterator = 1
@@ -833,9 +843,9 @@ class runDORA(object):
                     while self.memory.localInhibitor.act == 0:
                         # 4.3.1-4.3.10) update network activations.
                         currentPO.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False)
+                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=True)
                         # Do compression.
-                        self.memory, made_RBs = unpacking_routine(self.memory, made_RBs, self.gamma, self.tokenize)
+                        self.memory, made_RBs = unpacking_routine(self.memory, made_RBs, currentPO, self.gamma, self.tokenize)
                         # fire the local_inhibitor if necessary.
                         self.time_step_fire_local_inhibitor()
                         # update GUI.
@@ -844,12 +854,86 @@ class runDORA(object):
                     # PO firing is OVER.
                     self.post_count_by_operations()
 
+                # construct the rest of the proposition with the rest of the predicates and objects from the same analog as the predicates to compress
+                restOfPOs, restOfRBs = [], [] # lists to store those that were NOT used during unpacking
+                for myPO in current_pred_analog.myPOs:
+                    if myPO not in firingOrder:
+                        restOfPOs.append(myPO)
+                for myPO in restOfPOs:
+                    for myRB in myPO.myRBs:
+                        if myRB not in restOfRBs and myRB != pred.myRBs:
+                            restOfRBs.append(myRB)
+
+                # fullProp variable will indicate if the original proposition contains any other units beyond the ones needing compression
+                fullProp = False
+                for rb in restOfRBs:
+                    if rb.myParentPs:
+                        fullProp = True
+                if fullProp:
+                    # create copies of the rest of the objects and predicates
+                    # if self.tokenize == False: create a copy of the rest of the analog and bind it with made_RBs and all POs bound to them
+                    # if self.tokenize == True: create as many copies of the rest of the analog as there are ho sems and make that many news propositions with them and made_RBs and all POs bound to them
+                    if not self.tokenize:
+                        # find the part of the proposition which did not participate in unpacking
+                        newRBs = self.collect_the_rest(restOfRBs)
+
+                        # create a new P unit
+                        newPname = 'nil' + str(len(memory.Ps)+1)
+                        newSetNewP = dataTypes.PUnit(newPname, 'memory', 0, True, 'null') # ekaterina 'memory' instead of 'newSet'
+                        newSetNewP.mode = 0
+                        newSetNewP.act = 1.0
+                        # newSetNewP.my_maker_unit = made_RBs[i]
+                        # made_RB.my_made_unit = newSetNewP
+                        self.memory.Ps.append(newSetNewP)
+                        # self.memory.newSet.Ps.append(newSetNewP)
+
+                        # connect made_RBs recruited by the unpacking routine to it
+                        for rb in made_RBs:
+                            newSetNewP.myRBs.append(rb)
+                            rb.myParentPs.append(newSetNewP)
+
+                        # connect the rest of the RBs from the original analog to the new P unit
+                        for myRB in newRBs:
+                            newSetNewP.myRBs.append(myRB)
+                            myRB.myParentPs.append(newSetNewP)
+
+                            # put all items in new_set are in an analog.
+                            self.memory = newSet_items_to_analog(self.memory)
+                    else: # if self.tokenize == True: create as many copies of the rest of the analog as there are ho sems and make that many news propositions with them and made_RBs and all POs bound to them
+                        # how many new P units we need -- by the ho sem count
+                        hoSemCount = count_ho_sem(pred)
+
+                        for i in range(hoSemCount):
+                            # recruit copies of the tokens in part of the proposition which did not participate in unpacking
+                            newRBs = self.collect_the_rest(restOfRBs)
+                            # create a new P unit
+                            newPname = 'nil' + str(len(memory.Ps)+1)
+                            newSetNewP = dataTypes.PUnit(newPname, 'memory', 0, True, 'null') # ekaterina 'memory' instead of 'newSet'
+                            newSetNewP.mode = 0
+                            newSetNewP.act = 1.0
+                            # newSetNewP.my_maker_unit = made_RBs[i]
+                            # made_RB.my_made_unit = newSetNewP
+                            self.memory.Ps.append(newSetNewP)
+                            # self.memory.newSet.Ps.append(newSetNewP)
+
+                            # connect one of made_RBs recruited by the unpacking routine to it
+                            # for rb in made_RBs:
+                            newSetNewP.myRBs.append(made_RBs[i])
+                            made_RBs[i].myParentPs.append(newSetNewP)
+
+                            # connect the rest of the RBs from the original analog to the new P unit
+                            for myRB in newRBs:
+                                newSetNewP.myRBs.append(myRB)
+                                myRB.myParentPs.append(newSetNewP)
+
                 # if self.tokenize == False: create a new analog and populate it with the made_RBs and all POs bound to them
                 # if self.tokenize == True: create two new analogs and place each newly created RB in a separate analog
                 if self.tokenize:
                     for i in range(2):
                         new_analog = dataTypes.Analog()
                         self.memory.analogs.append(new_analog)
+                        ### ADD NEW Ps to the analog as well
+                        ####################################
                         new_analog.myRBs.append(made_RBs[i])
                         made_RBs[i].myanalog = new_analog
                         new_analog.myPOs.append(made_RBs[i].myPred[0])
@@ -859,6 +943,10 @@ class runDORA(object):
                 else:
                     new_analog = dataTypes.Analog()
                     self.memory.analogs.append(new_analog)
+                    if fullProp:
+                        # append new P to the new analog
+                        new_analog.myPs.append(newSetNewP)
+                        newSetNewP.myanalog = new_analog
                     for rb in made_RBs:
                         new_analog.myRBs.append(rb)
                         rb.myanalog = new_analog
@@ -866,6 +954,18 @@ class runDORA(object):
                         rb.myPred[0].myanalog = new_analog
                         new_analog.myPOs.append(rb.myObj[0])
                         rb.myObj[0].myanalog = new_analog
+
+                # remove the original compressed structures from memory; do it through the current_pred_analog
+                if self.remove_compressed:
+                    for i in range(len(current_pred_analog.myPs)):
+                        self.memory.Ps.remove(current_pred_analog.myPs[i])
+                    for i in range(len(current_pred_analog.myRBs)):
+                        self.memory.RBs.remove(current_pred_analog.myRBs[i])
+                    for i in range(len(current_pred_analog.myPOs)):
+                        self.memory.POs.remove(current_pred_analog.myPOs[i])
+
+                    # remove current_pred_analog as well
+                    self.memory.analogs.remove(current_pred_analog)
         else:
             print('There are no predicates in the memory that could be unpacked')
             return
@@ -912,7 +1012,7 @@ class runDORA(object):
         # 4.3.8) Update input to semantic units.
         for semantic in self.memory.semantics:
             # ignore input to semantic units from POs in object mode if ignore_object_semantics==True (i.e., if DORA is focusing on relational properties (from Hummel & Holyoak, 2003)).
-            semantic.update_input(self.memory, retrieval_license, ignore_object_semantics, ignore_memory_semantics)
+            semantic.update_input(self.memory, self.ho_sem_act_flow, retrieval_license, ignore_object_semantics, ignore_memory_semantics)
         # 4.3.9) Update input to all tokens in the recipient and emerging recipient (i.e., newSet).
         self.memory = update_recipient_inputs(self.memory, self.asDORA, phase_set, self.lateral_input_level, self.ignore_object_semantics)
         self.memory = update_newSet_inputs(self.memory)
@@ -2198,6 +2298,7 @@ def schema_requirements(memory):
 
 # check if requirements for relational generalization are met.
 def rel_gen_requirements(memory):
+    threshold = 0.6 # ekaterina changed, it was 0.7
     do_inference = False
     # make sure that at least one driver unit maps to a recipient unit.
     for myP in memory.driver.Ps:
@@ -2217,20 +2318,17 @@ def rel_gen_requirements(memory):
     # now make sure that for units in the driver that do map, the mapping is above threshold(=.7). # ekaterina: threshold = .6
     if do_inference:
         for myP in memory.driver.Ps:
-            # if .7 > myP.max_map > 0.0: # ekaterina
-            if .6 > myP.max_map > 0.0: # ekaterina
+            if threshold > myP.max_map > 0.0: # ekaterina
                 do_inference = False
                 break
     if do_inference:
         for myRB in memory.driver.RBs:
-            # if .7 > myRB.max_map > 0.0: # ekaterina
-            if .6 > myP.max_map > 0.0: # ekaterina
+            if threshold > myP.max_map > 0.0: # ekaterina
                 do_inference = False
                 break
     if do_inference:
         for myPO in memory.driver.POs:
-            # if .7 > myPO.max_map > 0.0: # ekaterina
-            if .6 > myP.max_map > 0.0: # ekaterina
+            if threshold > myP.max_map > 0.0: # ekaterina
                 do_inference = False
                 break
     # returns.
@@ -2635,7 +2733,7 @@ def retrieve_tokens(memory, bias_retrieval_analogs, use_relative_act):
                 if analog.total_act > 0 and analog.num_units > 0:
                     retrieve_prob = analog.normalised_retrieval_act/sum_normalised_analogs
                     randomNum = random.random()
-                    if retrieve_prob >= randomNum: # / 1.5: # ekaterina
+                    if retrieve_prob >= randomNum:# / 1.5: # ekaterina
                         # retrieve the analog and all it's tokens.
                         retrieve_analog_contents(analog)
         else:
@@ -3573,7 +3671,7 @@ def find_objs_compression(driver):
     # returns.
     return objs_compression
 
-# function to perform compression operations; # ekaterina: ovehaul
+# ekaterina: major overhaul of function to perform compression operations
 def compression_routine(memory, made_RB, compressedPO, ho_sem, gamma):
     # find the most active PO
     most_active_PO = get_most_active_unit(memory.driver.POs)
@@ -3581,36 +3679,39 @@ def compression_routine(memory, made_RB, compressedPO, ho_sem, gamma):
     # if there is no made_RB, make one, and set made_RB to that RB.
     if not made_RB:
         # newSet_new_RB = dataTypes.RBUnit('nil', 'newSet', 0, True, 'null')
-        made_RB = dataTypes.RBUnit('nil', 'memory', 0, True, 'null') # ekaterina 'memory' instead of 'newSet'
+        made_RB = dataTypes.RBUnit('nil', 'memory', 0, True, 'null') # 'memory' instead of 'newSet'
         made_RB.act = 1.0
         memory.RBs.append(made_RB)
+        # add to the emerging recipient proxy, newSet
         # memory.newSet.RBs.append(made_RB)
         # made_RB = newSet_new_RB
 
-        # ekaterina: also make a compressed predicate
+        # recruit a PO unit to serve as the compressed predicate
         newPOname = ''
         # a name for a new cumulative predicate which consists of names of all the active predicates
         for pred in most_active_PO.same_RB_POs:
             newPOname += pred.name
-        compressedPO = dataTypes.POUnit(newPOname, 'memory', 0, True, 'null', 1) # ekaterina 'memory' instead of 'newSet'
+        compressedPO = dataTypes.POUnit(newPOname, 'memory', 0, True, 'null', 1) # 'memory' instead of 'newSet'
         compressedPO.act = 1.0
 
+        # learn a connection between the compressed predicate and made_RB
         compressedPO.my_maker_unit = made_RB
         made_RB.my_made_unit = compressedPO
 
         memory.POs.append(compressedPO)
+        # add to the emerging recipient proxy, newSet
         # memory.newSet.POs.append(compressedPO)
         # compressedPO = newSet_new_PO
 
-        # ekaterina: learn connection between made_RB and compressed predicate
+        # learn connection between made_RB and compressed predicate
         made_RB.myPred.append(compressedPO)
         compressedPO.myRBs.append(made_RB)
 
-    # if the most active PO has already caused a PO to be inferred in newSet, learn connections between the inferred PO and active semantics and the made_RB, or otherwise infer a PO in newSet to match the most active PO.
+    # if the most active PO has already caused a PO to be inferred in newSet, learn connections between the inferred PO and active semantics, otherwise infer a PO to match the most active PO.
     if most_active_PO.predOrObj == 0 and most_active_PO.my_made_unit:
         most_active_PO.my_made_unit.act = 1.0
         for semantic in memory.semantics:
-            # check if I am connected to the newSet myPO. If yes, update my connection based on semantic activation. If not, and I am active, infer a connection.
+            # check if I am connected to the newly recruited PO unit. If yes, update my connection based on semantic activation. If not, and I am active, infer a connection.
             connected_to_newSetPO = False
             # check all the semantic's Links. If any of the semantic Links are to the newSet_PO, set connected_to_newSetPO to True (i.e., don't make a Link for the current semantic and the newSet_PO because one already exits), and update the connection between the newSet_PO and the current semantic by a simple Hebbian rule.
             for Link in semantic.myPOs:
@@ -3629,7 +3730,7 @@ def compression_routine(memory, made_RB, compressedPO, ho_sem, gamma):
                 most_active_PO.my_made_unit.mySemantics.append(new_Link)
                 semantic.myPOs.append(new_Link)
                 memory.Links.append(new_Link)
-
+    # for a predicate to be compressed: if ho_sem unit is already recruited make it iteratively learn weighted connections to regular semantic units that are active together with the corresponding active predicate
     elif most_active_PO.predOrObj == 1 and ho_sem:
         # if a semantic of a predicate is already connected to a higher order semantic, update the connection weight between them; the weights are stored in ho_sem
         for link in most_active_PO.mySemantics:
@@ -3645,28 +3746,29 @@ def compression_routine(memory, made_RB, compressedPO, ho_sem, gamma):
                     semIndex = ho_sem.semConnect.index(link.mySemantic)
                     ho_sem.semConnectWeights[semIndex] = 1*(link.mySemantic.act-0)*gamma
 
-    else: # I have not caused a unit to be inferred (for object) or has not created an ho_sem
+    else: # I have not caused a unit to be inferred (for object) or has not created an ho_sem (for predicate)
         # infer a newSet PO unit (with activation 1.0) and add it to memory. Set the value of the .myanalog field to 'null', as you will create an analog to house all newSet units at the end of the .doCompression() routine above.
-        # give the new PO the name 'nil' + the len(memory.POs)+1.
-        # new_PO_name = 'nil' + str(len(memory.POs)+1)
         if most_active_PO.predOrObj == 0:
-            new_PO_name = 'new_' + most_active_PO.name
-            newSet_new_PO = dataTypes.POUnit(new_PO_name, 'memory', 0, True, 'null', 0) # ekaterina 'memory' instead of 'newSet'
+            # name for the object
+            new_PO_name = 'nil' + str(len(memory.POs)+1)
+            # new_PO_name = 'new_' + most_active_PO.name
+            newSet_new_PO = dataTypes.POUnit(new_PO_name, 'memory', 0, True, 'null', 0) # 'memory' instead of 'newSet'
             newSet_new_PO.act = 1.0
             newSet_new_PO.my_maker_unit = most_active_PO
             most_active_PO.my_made_unit = newSet_new_PO
-
+            # add now PO unit to memory
             memory.POs.append(newSet_new_PO)
+            # add to the emerging recipient proxy, newSet
             # print('\n' + newSet_new_PO.name + '\n')
             # memory.newSet.POs.append(newSet_new_PO)
 
-            # ekaterina: learn connection between made_RB and the newly created copy of the object
+            # learn connection between made_RB and the newly created copy of the object
             made_RB.myObj.append(newSet_new_PO)
             newSet_new_PO.myRBs.append(made_RB)
 
-        # if the most active PO is a pred, recruit a new higher order semantic, and set ho_sem to that semantic.
+        # if the most active PO is a pred, recruit a new higher-order semantic, and set ho_sem to that semantic.
         else: # if most_active_PO.predOrObj == 1:
-            # check if this ho_sem already exists in memory; if if does not, recruit a new higher-order semantic unit
+            # check if this ho_sem already exists in memory; if it does not, recruit a new higher-order semantic unit
             sem_name = 'ho_sem_' + most_active_PO.name
             recruitHO = True
             for sem in memory.semantics:
@@ -3677,7 +3779,7 @@ def compression_routine(memory, made_RB, compressedPO, ho_sem, gamma):
                 ho_sem = dataTypes.Semantic(sem_name, None, None, 'HO')
                 memory.semantics.append(ho_sem)
 
-            # ekaterina: learn a connection between the new HO semantic and compressedPO
+            # learn a connection between the new HO semantic and compressedPO
             newLink = dataTypes.Link(compressedPO, 'nil', ho_sem, 1.0)
             compressedPO.mySemantics.append(newLink)
             ho_sem.myPOs.append(newLink)
@@ -3685,18 +3787,17 @@ def compression_routine(memory, made_RB, compressedPO, ho_sem, gamma):
 
     return memory, made_RB, compressedPO, ho_sem
 
-# ekaterina: function to find objects bound to predicates with higher order semantics
-def find_objs_unpacking(driver):
-    objs_unpacking = []
+# ekaterina: function to find compressed predicates -- the ones with higher-order semantics
+def find_preds_to_unpack(driver):
+    preds_to_unpack = []
     for myPO in driver.POs:
-        # add to the list an object bound to a predicate connected to ho_sems
+        # add predicate connected to ho_sems to the list
         if myPO.predOrObj == 1:
             for link in myPO.mySemantics:
                 if link.mySemantic.ont_status == 'HO':
-                    obj = myPO.same_RB_POs[0]
-                    objs_unpacking.append(obj)
+                    preds_to_unpack.append(myPO)
                     break
-    return objs_unpacking
+    return preds_to_unpack
 
 def create_PO(memory, most_active_PO):
     new_PO_name = 'nil' + str(len(memory.POs)+1)
@@ -3709,29 +3810,30 @@ def create_PO(memory, most_active_PO):
     # memory.newSet.POs.append(newSet_new_PO)
     return memory, newSet_new_PO
 
-# ekaterina: function to perform unpacking operations; one copy of an object
-def unpacking_routine(memory, made_RBs, gamma, tokenize):
+# ekaterina: function to perform unpacking operations
+def unpacking_routine(memory, made_RBs, currentPO, gamma, tokenize):
     # find the most active PO
     most_active_PO = get_most_active_unit(memory.driver.POs)
-
     # count how many POs are needed -- as many as ho_sems are connected to the compressed predicate
     if most_active_PO.predOrObj == 0: # most_active_PO is an object
-        myPred = most_active_PO.same_RB_POs[0] # the compressed predicate
-        hoSemNum = count_ho_sem(myPred)
-    else: # most_active_PO is the compressed predicate
-        hoSemNum = count_ho_sem(most_active_PO)
+        for pred in most_active_PO.same_RB_POs: # for all predicates bound to the current object find the one with ho sems and count them
+            hoSemCount = count_ho_sem(pred)
+            if hoSemCount > 0:
+                break
+    else: # most_active_PO is the compressed predicate, count its ho sems
+        hoSemCount = count_ho_sem(most_active_PO)
 
     # if made_RBs is an empty list, make new RBs, one for each unpacked role
     if not made_RBs:
-        for i in range(hoSemNum):
+        for i in range(hoSemCount):
             memory, made_RB = infer_RB(memory, None)
             made_RBs.append(made_RB)
 
-    # DEPENDING ON WHETHER WE TOKENIZE the object over unpacked roles or not;
-    # if we do not tokenize, only one copy of the object is inferred which is bound to both unpacked roles
-    # if we tokenize (else segment) there are two copies of the object infered and they are bound to each unpacked role;
+    # DEPENDING ON WHETHER WE TOKENIZE the object over unpacked roles or not:
+    # if we do not tokenize, only one copy of the object is inferred which is bound to mutiple unpacked roles
+    # if we tokenize (else segment) there are multiple copies of the object infered and they are bound to each unpacked role
     if not tokenize:
-        # if the most active PO has already caused a PO to be inferred in newSet, learn connections between the inferred PO and active semantics and the made_RB, or otherwise infer a PO in newSet to match the most active PO.
+        # if the most active PO has already caused a PO to be inferred, learn connections between the inferred PO and active semantics and the made_RB, or otherwise infer a PO to match the most active PO.
         if most_active_PO.predOrObj == 0:
             # only one copy if inferred; it is bound to the first new RB in infer_PO()
             memory, made_RBs[0] = infer_PO(memory, made_RBs[0], gamma)
@@ -3773,7 +3875,7 @@ def unpacking_routine(memory, made_RBs, gamma, tokenize):
             else: # I have not caused any units to be inferred
                 # infer PO units (with activation 1.0) by the number of ho_sems and add them to memory;
                 # set the value of the .myanalog field to 'null', as an analog to house all newSet units at the end of the .do_unpacking() routine will be created
-                for i in range(hoSemNum):
+                for i in range(hoSemCount):
                     memory, newSet_new_PO = create_PO(memory, most_active_PO)
 
                     # learn connection between made_RBs and the newly created PO
@@ -3782,7 +3884,7 @@ def unpacking_routine(memory, made_RBs, gamma, tokenize):
                     else:
                         made_RBs[i].myPred.append(newSet_new_PO)
                     newSet_new_PO.myRBs.append(made_RBs[i])
-    else:
+    else: # tokenize == True
         # if we tokenize, there are two copies of the object infered and they are bound to each unpacked role
         # if the most active PO has already caused a PO to be inferred in newSet, learn connections between the inferred PO and active semantics and the made_RB, or otherwise infer a PO in newSet to match the most active PO.
         if most_active_PO.my_made_units:
@@ -3843,22 +3945,9 @@ def unpacking_routine(memory, made_RBs, gamma, tokenize):
         else: # I have not caused any units to be inferred
             # infer PO units (with activation 1.0) by the number of ho_sems and add them to memory;
             # set the value of the .myanalog field to 'null', as an analog to house all newSet units at the end of the .do_unpacking() routine will be created
-            # count how many POs are needed -- as many as ho_sems are connected to the compressed predicate
-            if most_active_PO.predOrObj == 0: # most_active_PO is an object
-                myPred = most_active_PO.same_RB_POs[0] # the compressed predicate
-                hoSemNum = count_ho_sem(myPred)
-            else: # most_active_PO is the compressed predicate
-                hoSemNum = count_ho_sem(most_active_PO)
+            for i in range(hoSemCount):
+                memory, newSet_new_PO = create_PO(memory, most_active_PO)
 
-            for i in range(hoSemNum):
-                # give the new PO the name 'nil' + the len(memory.POs)+1.
-                new_PO_name = 'nil' + str(len(memory.POs)+1)
-                # new_PO_name = 'new_' + most_active_PO.name
-                newSet_new_PO = dataTypes.POUnit(new_PO_name, 'memory', 0, True, 'null', most_active_PO.predOrObj) # ekaterina 'memory' instead of 'newSet'
-                newSet_new_PO.act = 1.0
-                newSet_new_PO.my_maker_unit = most_active_PO
-                most_active_PO.my_made_units.append(newSet_new_PO)
-                memory.POs.append(newSet_new_PO)
                 # learn connection between made_RBs and the newly created PO
                 if newSet_new_PO.predOrObj == 0:
                     made_RBs[i].myObj.append(newSet_new_PO)
@@ -3869,11 +3958,11 @@ def unpacking_routine(memory, made_RBs, gamma, tokenize):
 
 # ekaterina: function to count the number of higher-order semantics connected to the compressed predicate
 def count_ho_sem(myPred):
-    hoSemNum = 0 # to count the number of ho_sems
+    hoSemCount = 0 # to count the number of ho_sems
     for link in myPred.mySemantics:
         if link.mySemantic.ont_status == 'HO':
-            hoSemNum += 1
-    return hoSemNum
+            hoSemCount += 1
+    return hoSemCount
 
 # function to find the analog in the recipient that contains all the mapped recipient units. Currently for use only with rel_gen_routine() function.
 def find_recip_analog(memory):
@@ -4391,11 +4480,38 @@ def create_RB_dict(myRB, analog_counter):
     # and return the RB_dict--and, if necessry, the p_dict.
     return RB_dict, p_dict
 
-def print_newSet(memory):
-    print('newSet:')
+def print_newSet(memory): # ekaterina
+    print('\nnewSet:')
     for p in memory.newSet.Ps:
-        print(p.name)
+        print('P: ' + p.name)# + ' ' + str(p.myanalog))
     for rb in memory.newSet.RBs:
-        print(rb.name)
+        print('RB: ' + rb.name)# + ' '  + str(rb.myanalog))
     for po in memory.newSet.POs:
-        print(po.name)
+        print('PO: ' + po.name)# + ' '  + str(po.myanalog))
+
+def get_newSet_analog(memory): # ekaterina: get an analog where all the newSet items are stored; make sure it is just one
+    analogs = []
+    for p in memory.newSet.Ps:
+        if p.myanalog not in analogs:
+            analogs.append(p.myanalog)
+    for rb in memory.newSet.RBs:
+        if rb.myanalog not in analogs:
+            analogs.append(rb.myanalog)
+    for po in memory.newSet.POs:
+        if po.myanalog not in analogs:
+            analogs.append(po.myanalog)
+    if len(analogs) != 1:
+        print('\nInference resulted in less/more than 1 analog')
+    return analogs[0]
+
+def print_analog(analog): # ekaterina
+    print('Analog: ' + str(analog))
+    for p in analog.myPs:
+        print('P: ' + p.name)
+        for rb in p.myRBs:
+            print('RB: ' + rb.name)
+            for po in rb.myPred:
+                print('Pred: ' + po.name)
+            for po in rb.myObj:
+                print('Obj: ' + po.name)
+        print('\n')

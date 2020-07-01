@@ -194,7 +194,7 @@ def makeAnalog(analog, memory):
                         if makeNewSem:
                             # create the new semantic and the newLink.
 
-                            # ekaterina: check whether semantic is higher order
+                            # ekaterina: check whether semantic is higher order; template for ho sems: [['ho_sem_name1', 1, None, None, 'HO', ['name11', 'name12', 'name13'], ['ho_sem_name2', 1, None, None, 'HO', ['name21', 'name22', 'name23']]
                             if (type(semantic) is list) and (len(semantic) > 5): # ekaterina
                                 newSem = dataTypes.Semantic(semantic[0], semantic[2], semantic[3], semantic[4])
                                 newLink = dataTypes.Link(newPred, [], newSem, semantic[1])
