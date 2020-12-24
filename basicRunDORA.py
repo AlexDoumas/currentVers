@@ -3258,10 +3258,10 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
             else:
                 link.weight /= 2
         if not found_same:
-            # connect firstPO to same semantic. 
+            # connect secondPO to same semantic. 
             for semantic in memory.semantics:
                 if semantic.name == 'same':
-                    # connect the samentic to firstPO.
+                    # connect the samentic to secondPO.
                     new_link = dataTypes.Link(firstPO, [], semantic, 1.0)
                     secondPO.mySemantics.append(new_link)
                     semantic.myPOs.append(new_link)
@@ -3269,17 +3269,17 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
                     break
     else:
         # update the connections of firstPO to the 'more' semantic and the sem_link_PO semantic, and halve weights to other semantics. 
-        found_same = False
+        found_more = False
         for link in firstPO.mySemantics:
             if link is sem_link_PO:
                 link.weight = 1.0
             elif link.mySemantic.name == 'more':
                 link.weight = 1.0
-                found_same = True
+                found_more = True
             else:
                 link.weight /= 2
-        if not found_same:
-            # connect firstPO to same semantic. 
+        if not found_more:
+            # connect firstPO to more semantic. 
             for semantic in memory.semantics:
                 if semantic.name == 'more':
                     # connect the samentic to firstPO.
@@ -3289,20 +3289,20 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
                     memory.Links.append(new_link)
                     break
         # update the connections of secondPO to the 'less' semantic and the sem_link_PO semantic, and halve weights to other semantics. 
-        found_same = False
+        found_less = False
         for link in secondPO.mySemantics:
             if link is sem_link_PO2:
                 link.weight = 1.0
             elif link.mySemantic.name == 'less':
                 link.weight = 1.0
-                found_same = True
+                found_less = True
             else:
                 link.weight /= 2
-        if not found_same:
-            # connect firstPO to same semantic. 
+        if not found_less:
+            # connect secondPO to less semantic. 
             for semantic in memory.semantics:
                 if semantic.name == 'less':
-                    # connect the samentic to firstPO.
+                    # connect the samentic to secondPO.
                     new_link = dataTypes.Link(firstPO, [], semantic, 1.0)
                     secondPO.mySemantics.append(new_link)
                     semantic.myPOs.append(new_link)
