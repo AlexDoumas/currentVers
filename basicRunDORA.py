@@ -148,7 +148,7 @@ class runDORA(object):
                     while self.memory.globalInhibitor.act == 0:
                         # 4.3.1-4.3.10) update network activations.
                         currentRB.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False) # ekaterina: added retrieval_license
+                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=True) # ekaterina: added retrieval_license
                         # 4.3.11) Update mapping hypotheses.
                         self.memory = update_mappingHyps(self.memory)
                         # fire the local_inhibitor if necessary.
@@ -175,7 +175,7 @@ class runDORA(object):
                     while self.memory.localInhibitor.act == 0:
                         # 4.3.1-4.3.10) update network activations.
                         currentPO.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False) # ekaterina: added retrieval_license
+                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=True) # ekaterina: added retrieval_license
                         # 4.3.11) Update mapping hypotheses.
                         self.memory = update_mappingHyps(self.memory)
                         # fire the local_inhibitor if necessary.
@@ -307,17 +307,17 @@ class runDORA(object):
     def do_entropy_ops_within(self, pred_only):
         # within (entropy over items from the same analog in the driver/recipient) set entropy_ops are used to compute specific kinds of similarity/difference/magnitude over dimensions in the same analog in the driver.
         extend_SDML = True
-        # set asDORA mode to True if it is not already. 
+        # set asDORA mode to True if it is not already.
         changed_mode = False
         if not self.asDORA:
             self.asDORA = True
             changed_mode = True
         # do initialize network operations (steps 1-3 above).
         self.do_1_to_3(mapping=False)
-        # iterate through analogs in the driver. 
+        # iterate through analogs in the driver.
         for analog in self.memory.driver.analogs:
-            # for each analog, randomly select a pair of POs that both are strongly connected to a dimenions, and do an entropy comparison if applicable. 
-            # check if there are preds present. 
+            # for each analog, randomly select a pair of POs that both are strongly connected to a dimenions, and do an entropy comparison if applicable.
+            # check if there are preds present.
             pred_present = False
             for presPO in analog.myPOs:
                 if presPO.predOrObj == 1:
@@ -325,13 +325,13 @@ class runDORA(object):
                     break
             if len(analog.myPs) > 0:
                 for myP in analog.myPs:
-                    # initialise placeholders for PO pairs with matching semantics. These are used to check if SDM semantics are present in the current analog (when they are present and highly active, they inhibit the entropy mechanism; see code under comment: '#now random selection of pair of POs if any exist.'). 
+                    # initialise placeholders for PO pairs with matching semantics. These are used to check if SDM semantics are present in the current analog (when they are present and highly active, they inhibit the entropy mechanism; see code under comment: '#now random selection of pair of POs if any exist.').
                     match_int_dim = []
                     match_both_mag_sem = []
                     match_one_mag_sem = []
                     match_both_mag_sem_below = []
                     # check all PO pairs.
-                    # find all predPOs. 
+                    # find all predPOs.
                     pred_list = []
                     for myRB in myP.myRBs:
                         pred_list.append(myRB.myPred[0])
@@ -339,7 +339,7 @@ class runDORA(object):
                     for myPO in pred_list:
                         for myPO2 in pred_list[pred_list.index(myPO)+1:]:
                             if (myPO is not myPO2) and (myPO.predOrObj == myPO2.predOrObj):
-                                # check if they code the same dimension (are they both connected to a semantic unit coding a dimension with a weight near 1?), and whether any POs are connected to any SDM semantics (i.e., "more", "less", or "same") at all, or both are connected to SDM semantics below threshold. 
+                                # check if they code the same dimension (are they both connected to a semantic unit coding a dimension with a weight near 1?), and whether any POs are connected to any SDM semantics (i.e., "more", "less", or "same") at all, or both are connected to SDM semantics below threshold.
                                 intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh = en_based_mag_checks(myPO, myPO2)
                                 new_dict = {'PO1': myPO, 'PO2': myPO2, 'intersect_dim': intersect_dim, 'one_mag_sem_present': one_mag_sem_present, 'both_mag_sem_present': both_mag_sem_present, 'one_mag_sem_present_belowThresh': one_mag_sem_present_belowThresh, 'both_mag_sem_present_belowThresh': both_mag_sem_present_belowThresh}
                                 if len(intersect_dim) >= 1:
@@ -351,7 +351,7 @@ class runDORA(object):
                                 if both_mag_sem_present_belowThresh:
                                     match_both_mag_sem_below.append(new_dict)
                     # now random selection of pair of POs if any exist.
-                    # If SDM semantics are present, then no run. If no SDM semantics present and dimensions present, then run entropy ops. If SDM semantics kind of active, then find the best dimension and run entropy ops. 
+                    # If SDM semantics are present, then no run. If no SDM semantics present and dimensions present, then run entropy ops. If SDM semantics kind of active, then find the best dimension and run entropy ops.
                     ent_pair = None
                     if len(match_both_mag_sem) >= 1:
                         ent_pair = None
@@ -367,7 +367,7 @@ class runDORA(object):
                         self.memory = check_and_run_ent_ops_within(myPO, myPO2, intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh, extend_SDML, pred_only, pred_present, self.memory, self.mag_decimal_precision)
             elif len(analog.myRBs) > 0:
                 match_list = []
-                # find all predPOs. 
+                # find all predPOs.
                 pred_list = []
                 for myRB in analog.myRBs:
                     pred_list.append(myRB.myPred[0])
@@ -375,12 +375,12 @@ class runDORA(object):
                 for myPO in pred_list:
                     for myPO2 in pred_list[pred_list.index(myPO)+1:]:
                         if (myPO is not myPO2) and (myPO.predOrObj == myPO2.predOrObj):
-                            # check if they code the same dimension (are they both connected to a semantic unit coding a dimension with a weight near 1?), and whether any POs are connected to any SDM semantics (i.e., "more", "less", or "same") at all, or both are connected to SDM semantics below threshold. 
+                            # check if they code the same dimension (are they both connected to a semantic unit coding a dimension with a weight near 1?), and whether any POs are connected to any SDM semantics (i.e., "more", "less", or "same") at all, or both are connected to SDM semantics below threshold.
                             intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh = en_based_mag_checks(myPO, myPO2)
                             new_dict = {'PO1': myPO, 'PO2': myPO2, 'intersect_dim': intersect_dim, 'one_mag_sem_present': one_mag_sem_present, 'both_mag_sem_present': both_mag_sem_present, 'one_mag_sem_present_belowThresh': one_mag_sem_present_belowThresh, 'both_mag_sem_present_belowThresh': both_mag_sem_present_belowThresh}
                             if len(intersect_dim) >= 1:
                                 match_list.append(new_dict)
-                # Now the random selection of pair of POs if any exist. 
+                # Now the random selection of pair of POs if any exist.
                 if len(match_list) >= 1:
                     ent_pair = random.choice(match_list)
                     myPO, myPO2, intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh = ent_pair['PO1'], ent_pair['PO2'], ent_pair['intersect_dim'], ent_pair['one_mag_sem_present'],  ent_pair['both_mag_sem_present'], ent_pair['one_mag_sem_present_belowThresh'], ent_pair['both_mag_sem_present_belowThresh']
@@ -391,12 +391,12 @@ class runDORA(object):
                 for myPO in analog.myPOs:
                     for myPO2 in analog.myPOs[analog.myPOs.index(myPO)+1:]:
                         if (myPO is not myPO2) and (myPO.predOrObj == myPO2.predOrObj):
-                            # check if they code the same dimension (are they both connected to a semantic unit coding a dimension with a weight near 1?), and whether any POs are connected to any SDM semantics (i.e., "more", "less", or "same") at all, or both are connected to SDM semantics below threshold. 
+                            # check if they code the same dimension (are they both connected to a semantic unit coding a dimension with a weight near 1?), and whether any POs are connected to any SDM semantics (i.e., "more", "less", or "same") at all, or both are connected to SDM semantics below threshold.
                             intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh = en_based_mag_checks(myPO, myPO2)
                             if len(intersect_dim) >= 1:
                                 new_dict = {'PO1': myPO, 'PO2': myPO2, 'intersect_dim': intersect_dim, 'one_mag_sem_present': one_mag_sem_present, 'both_mag_sem_present': both_mag_sem_present, 'one_mag_sem_present_belowThresh': one_mag_sem_present_belowThresh, 'both_mag_sem_present_belowThresh': both_mag_sem_present_belowThresh}
                                 match_list.append(new_dict)
-                # Now the random selection of pair of POs if any exist. 
+                # Now the random selection of pair of POs if any exist.
                 if len(match_list) >= 1:
                     ent_pair = random.choice(match_list)
                     myPO, myPO2, intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh = ent_pair['PO1'], ent_pair['PO2'], ent_pair['intersect_dim'], ent_pair['one_mag_sem_present'],  ent_pair['both_mag_sem_present'], ent_pair['one_mag_sem_present_belowThresh'], ent_pair['both_mag_sem_present_belowThresh']
@@ -406,9 +406,10 @@ class runDORA(object):
         if changed_mode:
             self.asDORA = False
 
-    def do_entropy_ops_between(self):
+    def do_entropy_ops_between(self, retrieval_license=False):
         # between (entropy over mapped items across the driver and recipient) set entropy_operations are used to compute over-all similarity/difference between mapped items.
         ##########
+        difference_ratio = 'undefined' # ekaterina
         # WAIT, DO I JUST WANNA DO SIMPLE SEMANTIC SIMILARITY CALCULATION USING SEMANTIC WEIGHTS? IF THEY MAP, COMPUTE THE SEMANTIC SIMILARITY BASED ON SEMANTIC WEIGHT VECTORS?
         # make sure that the .max_map_unit field has been filled in for all units.
         self.memory = get_max_map_units(self.memory)
@@ -689,16 +690,28 @@ class runDORA(object):
         self.asDORA = DORA_state
 
     def do_compression(self):
+        set = 'driver'
         # make sure DORA is in DORA mode.
         DORA_state = self.asDORA
         self.asDORA = True
         # make sure there are objects bound to multiple preds, and make a list of those objects.
+        self.memory = update_same_RB_POs(self.memory)
         to_compress_objects = find_objs_compression(self.memory.driver)
+
+        # where to place the compressed structures
+        set = self.set_for_compressed
+
         if len(to_compress_objects) > 0:
+            # create a new analog which will contained the new proposition with compressed roles
+            new_analog = dataTypes.Analog()
+            self.memory.analogs.append(new_analog)
+
             # do initialize network operations (steps 1-3 above).
             self.do_1_to_3(mapping=False)
             # set phase_set to 1 (NOTE: this step doesn't really matter, but I want to keep phase_set informatio for all operations).
             phase_set = 1
+            # the list to store all the newly created RBs
+            all_new_RBs = []
             # for each object in to_compress_objects, make a list of its RBs, and compress over the preds.
             for obj in to_compress_objects:
                 # the object controls firing. Fire the object, and infer a copy of object and RB in emerging recipient. Then, fire each pred and learn compressed version in emerging recipient.
@@ -712,9 +725,10 @@ class runDORA(object):
                 made_RB = None
                 # to make a telling name for made_RB
                 name = ''
-                compressedPO = None
+                compressed_PO = None
                 # fire each object in the firing order until local inhibitor fires.
                 for currentPO in firingOrder:
+                    # print('currentPO: ' + str(currentPO))
                     # initialize phase_set_iterator and flags (local_inhibitor_fired).
                     phase_set_iterator = 1
                     self.local_inhibitor_fired = False
@@ -726,7 +740,7 @@ class runDORA(object):
                         currentPO.act = 1.0
                         self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False) # ekaterina: added retrieval_license
                         # Do compression.
-                        self.memory, made_RB, compressedPO, ho_sem = compression_routine(self.memory, made_RB, compressedPO, ho_sem, self.gamma)
+                        self.memory, made_RB, compressed_PO, ho_sem = compression_routine(self.memory, made_RB, compressed_PO, ho_sem, set, self.gamma, new_analog)
                         # fire the local_inhibitor if necessary.
                         self.time_step_fire_local_inhibitor()
                         # update GUI.
@@ -735,82 +749,79 @@ class runDORA(object):
                     # PO firing is OVER.
                     self.post_count_by_operations()
 
-                # create a new analog and populate it with the made_RB and all POs bound to made_RB
-                new_analog = dataTypes.Analog()
-                self.memory.analogs.append(new_analog)
-                new_analog.myRBs.append(made_RB)
-                made_RB.myanalog = new_analog
-                new_analog.myPOs.append(made_RB.myPred[0])
-                made_RB.myPred[0].myanalog = new_analog
-                new_analog.myPOs.append(made_RB.myObj[0])
-                made_RB.myObj[0].myanalog = new_analog
+                    # list of all the newly created RBs
+                    if made_RB not in all_new_RBs:
+                        all_new_RBs.append(made_RB)
 
-                # construct the rest of the proposition with the rest of the predicates and objects from the same analog as the predicates to compress
-                restOfPOs, restOfRBs = [], []
-                for myPO in current_obj_analog.myPOs:
-                    if myPO.predOrObj == 0 and len(myPO.same_RB_POs) == 1:
-                        restOfPOs.append(myPO)
-                for myPO in restOfPOs:
-                    for myRB in myPO.myRBs:
-                        restOfRBs.append(myRB)
+            # construct the rest of the proposition with the rest of the predicates and objects from the same analog as the predicates to compress
+            other_POs, other_RBs = [], []
+            for myPO in current_obj_analog.myPOs:
+                if myPO.predOrObj == 0 and len(myPO.same_RB_POs) == 1:
+                    other_POs.append(myPO)
+            for myPO in other_POs:
+                for myRB in myPO.myRBs:
+                    other_RBs.append(myRB)
 
-                # fullProp variable will indicate if the original proposition contains any other units beyond the ones needing compression
-                fullProp = False
-                for rb in restOfRBs:
-                    if rb.myParentPs:
-                        fullProp = True
-                if fullProp:
-                    # create copies of the rest of the objects and predicates
-                    newRBs = self.collect_the_rest(restOfRBs)
+            # full_prop_simple variable indicates if the original proposition contains any other units beyond the ones needing compression
+            full_prop_simple = False
+            for rb in other_RBs:
+                if rb.myParentPs:
+                    full_prop_simple = True
 
-                    # create a new P unit
-                    newPname = 'nil' + str(len(self.memory.Ps)+1)
-                    newSetNewP = dataTypes.PUnit(newPname, 'memory', 0, True, 'null') # ekaterina 'memory' instead of 'newSet'
-                    newSetNewP.mode = 0
-                    newSetNewP.act = 1.0
-                    newSetNewP.my_maker_unit = made_RB
-                    made_RB.my_made_unit = newSetNewP
-                    self.memory.Ps.append(newSetNewP)
-                    # self.memory.newSet.Ps.append(newSetNewP)
+            # full_prop_complex variable indicates whether the original analog has full propositions (with Ps), but all the predicates were compressed
+            full_prop_complex = False
+            if not full_prop_simple and current_obj_analog.myPs:
+                # print("\nHERE 2\n")
+                full_prop_complex = True
 
-                    # append new P to the new analog
-                    new_analog.myPs.append(newSetNewP)
-                    newSetNewP.myanalog = new_analog
+            rest_of_RBs = []
+            if full_prop_simple:
+                # create copies of the rest of the objects with one roles and their predicates
+                rest_of_RBs = self.collect_the_rest(other_RBs, set)
 
-                    # connect the rest of the RBs to the new P unit and add them to new_analog
-                    for myRB in newRBs:
-                        newSetNewP.myRBs.append(myRB)
-                        myRB.myParentPs.append(newSetNewP)
-                        new_analog.myRBs.append(myRB)
-                        myRB.myanalog = new_analog
+            if full_prop_simple or full_prop_complex:
+                set = self.set_for_compressed
 
-                        # add the rest of POs to the new analog
-                        new_analog.myPOs.append(myRB.myPred[0])
-                        myRB.myPred[0].myanalog = new_analog
-                        new_analog.myPOs.append(myRB.myObj[0])
-                        myRB.myObj[0].myanalog = new_analog
+                # create a new P unit
+                newPname = 'nil' + str(len(self.memory.Ps)+1)
+                compression_P = dataTypes.PUnit(newPname, set, new_analog, True, new_analog)
+                compression_P.mode = 0
+                compression_P.act = 1.0
 
-                    # also connect the made_RB (recruited by the compression routine) to it
-                    newSetNewP.myRBs.append(made_RB)
-                    made_RB.myParentPs.append(newSetNewP)
+                self.memory.Ps.append(compression_P)
+                new_analog.myPs.append(compression_P)
+                # self.memory.newSet.Ps.append(compression_P)
 
-                # if 'remove_uncompressed' is True delete the original uncompressed structure from LTM
-                if self.remove_uncompressed:
-                    # remove the original uncompressed structures from memory since the compressed structure is unpackable; do it through the current_obj_analog
-                    for i in range(len(current_obj_analog.myPs)):
-                        self.memory.Ps.remove(current_obj_analog.myPs[i])
-                    for i in range(len(current_obj_analog.myRBs)):
-                        self.memory.RBs.remove(current_obj_analog.myRBs[i])
-                    for i in range(len(current_obj_analog.myPOs)):
-                        self.memory.POs.remove(current_obj_analog.myPOs[i])
+                # connect all the all_new_RBs (recruited by the compression routine) to the new P unit
+                for made_RB in all_new_RBs:
+                    compression_P.myRBs.append(made_RB)
+                    made_RB.myParentPs.append(compression_P)
 
-                    # remove current_obj_analog as well
-                    self.memory.analogs.remove(current_obj_analog)
+                # connect the original RBs (with the simple roles, if any) to the new P unit
+                if rest_of_RBs:
+                    for myRB in rest_of_RBs:
+                        compression_P.myRBs.append(myRB)
+                        myRB.myParentPs.append(compression_P)
 
-            # put all items in new_set are in an analog.
-            self.memory = newSet_items_to_analog(self.memory)
+            # if 'remove_uncompressed' is True delete the original uncompressed structure from LTM
+            if self.remove_uncompressed:
+                # remove the original uncompressed structures from memory since the compressed structure is unpackable; do it through the current_obj_analog
+                for i in range(len(current_obj_analog.myPs)):
+                    self.memory.Ps.remove(current_obj_analog.myPs[i])
+                for i in range(len(current_obj_analog.myRBs)):
+                    self.memory.RBs.remove(current_obj_analog.myRBs[i])
+                for i in range(len(current_obj_analog.myPOs)):
+                    self.memory.POs.remove(current_obj_analog.myPOs[i])
+
+                # remove current_obj_analog as well
+                self.memory.analogs.remove(current_obj_analog)
+
+            # # put all items in new_set are in an analog.
+            # self.memory = newSet_items_to_analog(self.memory)
         else:
             print('\nThere are no objects to compress over in the driver.\n')
+
+        # self.post_phase_set_operations(retrieval_license=False, map_license=False)
 
         # reset inferences (i.e., reset .inferred, .my_maker_unit, and .my_made_unit fields from all the newSet and recipient units).
         self.memory = reset_inferences(self.memory)
@@ -818,13 +829,13 @@ class runDORA(object):
         # return .asDORA state to starting .asDORA state.
         self.asDORA = DORA_state
 
-    # ekaterina: function to collect the rest of the units in the driver after the compression/unpacking and conjoin them and the compressed/unpacked part together
-    def collect_the_rest(self, restOfRBs):
+    # ekaterina: collects the rest of the units in the driver after the compression/unpacking and conjoins them and the compressed/unpacked part together
+    def collect_the_rest(self, other_RBs, set):
         # do initialize network operations (steps 1-3 above).
         self.do_1_to_3(mapping=False)
         phase_set = 1
         newRBs = []
-        for rb in restOfRBs:
+        for rb in other_RBs:
             # fire the object and the predicate of each RB, infer a copy of each and also recruit a copy of RB in emerging recipient
             firingOrder = []
             firingOrder.append(rb.myPred[0])
@@ -843,8 +854,8 @@ class runDORA(object):
                     currentPO.act = 1.0
                     self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False)
                     # infer copies of POs and connect them to a newly recruited RB
-                    self.memory, new_RB = infer_RB(self.memory, new_RB)
-                    self.memory, new_RB = infer_PO(self.memory, new_RB, self.gamma)
+                    self.memory, new_RB = infer_RB(self.memory, new_RB, set, currentPO.myanalog)
+                    self.memory, new_RB = infer_PO(self.memory, new_RB, self.gamma, set)
                     # fire the local_inhibitor if necessary
                     self.time_step_fire_local_inhibitor()
                     # update GUI
@@ -858,7 +869,7 @@ class runDORA(object):
             newRBs.append(new_RB)
         return newRBs
 
-    # ekaterina: function to unpack compressed predicates
+    # ekaterina: unpacks compressed predicates
     def do_unpacking(self):
         # make sure DORA is in DORA mode.
         DORA_state = self.asDORA
@@ -904,18 +915,18 @@ class runDORA(object):
                     self.post_count_by_operations()
 
                 # construct the rest of the proposition with the rest of the predicates and objects from the same analog as the predicates to compress
-                restOfPOs, restOfRBs = [], [] # lists to store those that were NOT used during unpacking
+                other_POs, other_RBs = [], [] # lists to store those that were NOT used during unpacking
                 for myPO in current_pred_analog.myPOs:
                     if myPO not in firingOrder:
-                        restOfPOs.append(myPO)
-                for myPO in restOfPOs:
+                        other_POs.append(myPO)
+                for myPO in other_POs:
                     for myRB in myPO.myRBs:
-                        if myRB not in restOfRBs and myRB != pred.myRBs:
-                            restOfRBs.append(myRB)
+                        if myRB not in other_RBs and myRB != pred.myRBs:
+                            other_RBs.append(myRB)
 
                 # fullProp variable will indicate if the original proposition contains any other units beyond the ones needing compression
                 fullProp = False
-                for rb in restOfRBs:
+                for rb in other_RBs:
                     if rb.myParentPs:
                         fullProp = True
                 if fullProp:
@@ -924,7 +935,7 @@ class runDORA(object):
                     # if self.tokenize == True: create as many copies of the rest of the analog as there are ho sems and make that many news propositions with them and made_RBs and all POs bound to them
                     if not self.tokenize:
                         # find the part of the proposition which did not participate in unpacking
-                        newRBs = self.collect_the_rest(restOfRBs)
+                        newRBs = self.collect_the_rest(other_RBs)
 
                         # create a new P unit
                         newPname = 'nil' + str(len(memory.Ps)+1)
@@ -954,7 +965,7 @@ class runDORA(object):
 
                         for i in range(hoSemCount):
                             # recruit copies of the tokens in part of the proposition which did not participate in unpacking
-                            newRBs = self.collect_the_rest(restOfRBs)
+                            newRBs = self.collect_the_rest(other_RBs)
                             # create a new P unit
                             newPname = 'nil' + str(len(memory.Ps)+1)
                             newSetNewP = dataTypes.PUnit(newPname, 'memory', 0, True, 'null') # ekaterina 'memory' instead of 'newSet'
@@ -2918,12 +2929,12 @@ def get_my_max_map_unit(unit):
             max_map_unit = max_map.driverToken
     return max_map_unit
 
-# function to do all the necessary checks for entropy/energy based magnitude comparison. 
+# function to do all the necessary checks for entropy/energy based magnitude comparison.
 def en_based_mag_checks(myPO, myPO2):
-    # check if they code the same dimension (are they both connected to a semantic unit coding a dimension with a weight near 1?), and whether any POs are connected to any SDM semantics (i.e., "more", "less", or "same"). 
-    # first, do they code for intersecting dimensions. 
+    # check if they code the same dimension (are they both connected to a semantic unit coding a dimension with a weight near 1?), and whether any POs are connected to any SDM semantics (i.e., "more", "less", or "same").
+    # first, do they code for intersecting dimensions.
     intersect_dim = list(set([x.mySemantic.dimension for x in myPO.mySemantics if x.mySemantic.dimension and x.weight > .9]).intersection([y.mySemantic.dimension for y in myPO2.mySemantics if y.mySemantic.dimension and y.weight > .9]))
-    # second, does either PO have connections to any SDM semantics with weights above threshold(=.9), or do both connnect to any SDM semantics below threshold(=.9). 
+    # second, does either PO have connections to any SDM semantics with weights above threshold(=.9), or do both connnect to any SDM semantics below threshold(=.9).
     one_mag_sem_present = False
     both_mag_sem_present = False
     one_mag_sem_present_belowThresh = False
@@ -2943,7 +2954,7 @@ def en_based_mag_checks(myPO, myPO2):
                 else:
                     one_mag_sem_present = True
                     break
-    # check if there are mag_sem in eachPO that are below threshold (=.9). If there are any, then set one_mag_sem_present_belowThresh to True, and if there are such sem in both, then set both_mag_sem_present_belowThresh to True. 
+    # check if there are mag_sem in eachPO that are below threshold (=.9). If there are any, then set one_mag_sem_present_belowThresh to True, and if there are such sem in both, then set both_mag_sem_present_belowThresh to True.
     for link in myPO.mySemantics:
         if link.mySemantic.name == 'same' or link.mySemantic.name == 'different' or link.mySemantic.name == 'more' or link.mySemantic.name == 'less':
             if link.weight < .9:
@@ -2958,17 +2969,17 @@ def en_based_mag_checks(myPO, myPO2):
                 else:
                     one_mag_sem_present_belowThresh = True
                     break
-    # third, find the dimension of highest over-lap. That is, find the semantic that codes the 'value' for each dimension in intersect_dim with the highest weight. 
-    # for each PO find the 'state' and 'value' semantics for each dimension in intersect_dim. 
+    # third, find the dimension of highest over-lap. That is, find the semantic that codes the 'value' for each dimension in intersect_dim with the highest weight.
+    # for each PO find the 'state' and 'value' semantics for each dimension in intersect_dim.
     high_dim = []
     high_dim_weight = 0.0
     for dim in intersect_dim:
-        # add the weights of the 'value' semantics for the current dim for both myPO and myPO2. Make sure to add the weights of the most strongly connected dimensional semantics. 
+        # add the weights of the 'value' semantics for the current dim for both myPO and myPO2. Make sure to add the weights of the most strongly connected dimensional semantics.
         dim_weights1 = [x for x in myPO.mySemantics if x.mySemantic.dimension == dim and x.mySemantic.ont_status == 'value']
         dim_weight1 = [x for x in dim_weights1 if x.weight == max(x.weight for x in dim_weights1)]
         dim_weights2 = [x for x in myPO2.mySemantics if x.mySemantic.dimension == dim and x.mySemantic.ont_status == 'value']
         dim_weight2 = [x for x in dim_weights2 if x.weight == max(x.weight for x in dim_weights2)]
-        # get the current_weight by adding the weights of the dim_weight1 and dim_weight2 links as long as there are links in dim_weight1 and dim_weight2 (i.e., dim_weight1 and dim_weight2 are not empty; dim_weight1 and dim_weight2 will be empty if the current POs are not connected to any absolute dimensional values). Otherwise, current_weight is just 0.0. 
+        # get the current_weight by adding the weights of the dim_weight1 and dim_weight2 links as long as there are links in dim_weight1 and dim_weight2 (i.e., dim_weight1 and dim_weight2 are not empty; dim_weight1 and dim_weight2 will be empty if the current POs are not connected to any absolute dimensional values). Otherwise, current_weight is just 0.0.
         if len(dim_weight1) > 0 and len(dim_weight2) > 0:
             current_weight = dim_weight1[0].weight + dim_weight2[0].weight
         else:
@@ -2977,7 +2988,7 @@ def en_based_mag_checks(myPO, myPO2):
             high_dim = [dim]
             high_dim_weight = current_weight
         elif current_weight == high_dim_weight and current_weight > 0:
-            # add the current dim to high_dim array. 
+            # add the current dim to high_dim array.
             high_dim.append(dim)
     # flip a coin to select dimension from high_dim array as long as there are elements in the array, and then set intersect_dim to a list containing only high_dim.
     if len(high_dim) > 0:
@@ -2985,12 +2996,12 @@ def en_based_mag_checks(myPO, myPO2):
         intersect_dim = high_dim
     else:
         intersect_dim = []
-    # return the intersect_dim and mag_sem_present. 
+    # return the intersect_dim and mag_sem_present.
     return intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh
 
 # function to check whether to run entropy based magnitude comparison (within) and to run ntropy based magnitude comparison (within) if appropriate.
 def check_and_run_ent_ops_within(myPO, myPO2, intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh, extend_SDML, pred_only, pred_present, memory, mag_decimal_precision):
-    # run energy based mag comparison. NOTE1: basic_en_based_mag_comparison() and basic_en_based_mag_refinement() do the same thing, but basic_en_based_mag_refinement() is faster when mag sem are already present (no need to build connections) and so is used when it can be (mag_sem_present_belowThresh). NOTE2: There is a separate call to basic_en_based_mag_refinement() for POs that are objects so that refinement does not work on objects when preds_only is True. 
+    # run energy based mag comparison. NOTE1: basic_en_based_mag_comparison() and basic_en_based_mag_refinement() do the same thing, but basic_en_based_mag_refinement() is faster when mag sem are already present (no need to build connections) and so is used when it can be (mag_sem_present_belowThresh). NOTE2: There is a separate call to basic_en_based_mag_refinement() for POs that are objects so that refinement does not work on objects when preds_only is True.
     if not one_mag_sem_present and not both_mag_sem_present_belowThresh and (myPO.predOrObj == 1) and (len(intersect_dim) >= 1):
         # no SDM sem present, so run mag_comparison.
         memory = basic_en_based_mag_comparison(myPO, myPO2, intersect_dim, memory, mag_decimal_precision)
@@ -3006,43 +3017,43 @@ def check_and_run_ent_ops_within(myPO, myPO2, intersect_dim, one_mag_sem_present
 
 # function to do basic energy/entropy based magnitude comparison when no magnitude semantics are present.
 def basic_en_based_mag_comparison(myPO, myPO2, intersect_dim, memory, mag_decimal_precision=0):
-    # find the semantic links connecting to the absolute dimensional value. 
+    # find the semantic links connecting to the absolute dimensional value.
     sem_link_PO = [link for link in myPO.mySemantics if (link.mySemantic.dimension == intersect_dim[0]) and link.mySemantic.ont_status == 'value']
     sem_link_PO2 = [link for link in myPO2.mySemantics if (link.mySemantic.dimension == intersect_dim[0]) and link.mySemantic.ont_status == 'value']
-    # if the dimension is numeric (e.g., height-10), then get the average value of all dimensional values in the sem_links_PO and sem_link_PO2 and assign these to extent1 and extent2 respectively. 
+    # if the dimension is numeric (e.g., height-10), then get the average value of all dimensional values in the sem_links_PO and sem_link_PO2 and assign these to extent1 and extent2 respectively.
     if isinstance(sem_link_PO[0].mySemantic.amount, numbers.Number):
         extent1 = sum([link.mySemantic.amount for link in sem_link_PO])/float(len(sem_link_PO))
         extent2 = sum([link.mySemantic.amount for link in sem_link_PO2])/float(len(sem_link_PO2))
     else:
-        # otherwise, given that the dimension is non-numeric (e.g., colour-red), then set extent1 and extent2 to the respective values (e.g., red, green) of the 'value' semantics for the compared POs. 
+        # otherwise, given that the dimension is non-numeric (e.g., colour-red), then set extent1 and extent2 to the respective values (e.g., red, green) of the 'value' semantics for the compared POs.
         extent1 = sem_link_PO[0].mySemantic.amount
         extent2 = sem_link_PO2[0].mySemantics.amount
-    # compute ent_magnitudeMoreLessSame(). 
+    # compute ent_magnitudeMoreLessSame().
     more, less, same_flag, iterations = ent_magnitudeMoreLessSame(extent1, extent2, mag_decimal_precision)
-    # find any other dimensional semantics with high weights so that the weights can be reduced by the entropy process. 
+    # find any other dimensional semantics with high weights so that the weights can be reduced by the entropy process.
     other_sem_links_PO = [link for link in myPO.mySemantics if (link.mySemantic.dimension is not None) and (link.mySemantic.dimension != intersect_dim[0])]
     other_sem_links_PO2 = [link for link in myPO2.mySemantics if (link.mySemantic.dimension is not None) and (link.mySemantic.dimension != intersect_dim[0])]
     sem_link_PO += other_sem_links_PO
     sem_link_PO2 += other_sem_links_PO2
-    # connect the two POs to the appropraite relative magnitude semantics (based on the invariant patterns detected just above). 
+    # connect the two POs to the appropraite relative magnitude semantics (based on the invariant patterns detected just above).
     if more == extent2:
-        # call attach_mag_semantics() with myPO2 as firstPO and myPO as secondPO. 
+        # call attach_mag_semantics() with myPO2 as firstPO and myPO as secondPO.
         memory = attach_mag_semantics(same_flag, myPO2, myPO, sem_link_PO2, sem_link_PO, memory)
     else:
-        # call attach_mag_semantics() with myPO as firstPO and myPO2 as secondPO. 
+        # call attach_mag_semantics() with myPO as firstPO and myPO2 as secondPO.
         memory = attach_mag_semantics(same_flag, myPO, myPO2, sem_link_PO, sem_link_PO2, memory)
-    # return memory. 
+    # return memory.
     return memory
 
-# function to do basic energy/entropy based magnitude refinement when magnitude semantics are already present. 
+# function to do basic energy/entropy based magnitude refinement when magnitude semantics are already present.
 def basic_en_based_mag_refinement(myPO, myPO2, memory):
-    # if there are magnitude semantics present, and there are some matching dimensions, then activate the appropriate magnitude semantics and matching dimensions, and adjust weights as appropriate (i.e., turn on the appropriate magnitude semantics for each PO, and adjust weight accordingly). 
+    # if there are magnitude semantics present, and there are some matching dimensions, then activate the appropriate magnitude semantics and matching dimensions, and adjust weights as appropriate (i.e., turn on the appropriate magnitude semantics for each PO, and adjust weight accordingly).
     mag_decimal_precision = 1
-    # find the dimension on which they match if there is one. 
+    # find the dimension on which they match if there is one.
     match_dim = list(set([x.mySemantic.dimension for x in myPO.mySemantics if x.mySemantic.dimension and x.mySemantic.ont_status == 'state' and x.weight > .9]).intersection([y.mySemantic.dimension for y in myPO2.mySemantics if y.mySemantic.dimension and y.mySemantic.ont_status == 'state' and y.weight > .9]))
-    # if there is a single matching dimension, then find value on that dimension for each object and update magnitude semantic weights; elif there are multiple matching dimensions, find the matching dimension that each PO is most strongly connected to, and update magnitude semantic weights. 
+    # if there is a single matching dimension, then find value on that dimension for each object and update magnitude semantic weights; elif there are multiple matching dimensions, find the matching dimension that each PO is most strongly connected to, and update magnitude semantic weights.
     if len(match_dim) == 1:
-        # find the semantic links connecting to the absolute dimensional value. 
+        # find the semantic links connecting to the absolute dimensional value.
         sem_link_PO = [link for link in myPO.mySemantics if (link.mySemantic.dimension == match_dim[0]) and link.mySemantic.ont_status == 'state']
         sem_link_PO2 = [link for link in myPO2.mySemantics if (link.mySemantic.dimension == match_dim[0]) and link.mySemantic.ont_status == 'state']
         # find value on that dimension for each object and then update magnitude semantic weights.
@@ -3055,17 +3066,17 @@ def basic_en_based_mag_refinement(myPO, myPO2, memory):
             if link.mySemantic.dimension == match_dim[0] and link.mySemantic.ont_status == 'value'and link.mySemantic.amount != None:
                 PO2_dim_val = link.mySemantic.amount
                 break
-        # compute ent_magnitudeMoreLessSame(). 
+        # compute ent_magnitudeMoreLessSame().
         more, less, same_flag, iterations = ent_magnitudeMoreLessSame(PO1_dim_val, PO2_dim_val, mag_decimal_precision)
-        # connect the two POs to the appropraite relative magnitude semantics (based on the invariant patterns detected just above). 
+        # connect the two POs to the appropraite relative magnitude semantics (based on the invariant patterns detected just above).
         if more == PO2_dim_val:
-            # call update_mag_semantics() with myPO2 as firstPO and myPO as secondPO. 
+            # call update_mag_semantics() with myPO2 as firstPO and myPO as secondPO.
             memory = update_mag_semantics(same_flag, myPO2, myPO, sem_link_PO2[0], sem_link_PO[0], memory)
         else:
-            # call update_mag_semantics() with myPO as firstPO and myPO2 as secondPO. 
+            # call update_mag_semantics() with myPO as firstPO and myPO2 as secondPO.
             memory = update_mag_semantics(same_flag, myPO, myPO2, sem_link_PO[0], sem_link_PO2[0], memory)
     else:
-        # find the matching dimension that each PO is most strongly connected to, and then update magnitude semantic weights. 
+        # find the matching dimension that each PO is most strongly connected to, and then update magnitude semantic weights.
         max_dim = None
         max_valuePO1 = 0.0
         current_dim_weight = 0.0
@@ -3086,17 +3097,17 @@ def basic_en_based_mag_refinement(myPO, myPO2, memory):
         # if there are max_dim values, use current max_dim and values to compute ent_magnitudeMoreLessSame().
         if max_dim:
             more, less, same_flag, iterations = ent_magnitudeMoreLessSame(max_valuePO1, max_valuePO2, mag_decimal_precision)
-            # find the semantic links connecting to the absolute dimensional value. 
+            # find the semantic links connecting to the absolute dimensional value.
             sem_link_PO = [link for link in myPO.mySemantics if (link.mySemantic.dimension == max_dim) and link.mySemantic.ont_status == 'state']
             sem_link_PO2 = [link for link in myPO2.mySemantics if (link.mySemantic.dimension == max_dim) and link.mySemantic.ont_status == 'state']
-            # connect the two POs to the appropraite relative magnitude semantics (based on the invariant patterns detected just above). 
+            # connect the two POs to the appropraite relative magnitude semantics (based on the invariant patterns detected just above).
             if more == max_valuePO2:
-                # call update_mag_semantics() with myPO2 as firstPO and myPO as secondPO. 
+                # call update_mag_semantics() with myPO2 as firstPO and myPO as secondPO.
                 memory = update_mag_semantics(same_flag, myPO2, myPO, sem_link_PO2[0], sem_link_PO[0], memory)
             else:
-                # call update_mag_semantics() with myPO as firstPO and myPO2 as secondPO. 
+                # call update_mag_semantics() with myPO as firstPO and myPO2 as secondPO.
                 memory = update_mag_semantics(same_flag, myPO, myPO2, sem_link_PO[0], sem_link_PO2[0], memory)
-    # return memory. 
+    # return memory.
     return memory
 
 # function calculates more/less/same from two codes of extent based on entropy and competion.
@@ -3224,7 +3235,7 @@ def attach_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
     # return memory.
     return memory
 
-# function to update the connections to magnitude semantics during the basic_en_based_mag_refinement() function. 
+# function to update the connections to magnitude semantics during the basic_en_based_mag_refinement() function.
 def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2, memory):
     # NOTE: In this function, firstPO is the larger and secondPO is the smaller (unless same_flag is True, in which case the two are equal).
     if same_flag:
@@ -3239,7 +3250,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
             else:
                 link.weight /= 2
         if not found_same:
-            # connect firstPO to same semantic. 
+            # connect firstPO to same semantic.
             for semantic in memory.semantics:
                 if semantic.name == 'same':
                     # connect the samentic to firstPO.
@@ -3258,7 +3269,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
             else:
                 link.weight /= 2
         if not found_same:
-            # connect secondPO to same semantic. 
+            # connect secondPO to same semantic.
             for semantic in memory.semantics:
                 if semantic.name == 'same':
                     # connect the samentic to secondPO.
@@ -3268,7 +3279,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
                     memory.Links.append(new_link)
                     break
     else:
-        # update the connections of firstPO to the 'more' semantic and the sem_link_PO semantic, and halve weights to other semantics. 
+        # update the connections of firstPO to the 'more' semantic and the sem_link_PO semantic, and halve weights to other semantics.
         found_more = False
         for link in firstPO.mySemantics:
             if link is sem_link_PO:
@@ -3279,7 +3290,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
             else:
                 link.weight /= 2
         if not found_more:
-            # connect firstPO to more semantic. 
+            # connect firstPO to more semantic.
             for semantic in memory.semantics:
                 if semantic.name == 'more':
                     # connect the samentic to firstPO.
@@ -3288,7 +3299,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
                     semantic.myPOs.append(new_link)
                     memory.Links.append(new_link)
                     break
-        # update the connections of secondPO to the 'less' semantic and the sem_link_PO semantic, and halve weights to other semantics. 
+        # update the connections of secondPO to the 'less' semantic and the sem_link_PO semantic, and halve weights to other semantics.
         found_less = False
         for link in secondPO.mySemantics:
             if link is sem_link_PO2:
@@ -3299,7 +3310,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
             else:
                 link.weight /= 2
         if not found_less:
-            # connect secondPO to less semantic. 
+            # connect secondPO to less semantic.
             for semantic in memory.semantics:
                 if semantic.name == 'less':
                     # connect the samentic to secondPO.
@@ -3308,7 +3319,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
                     semantic.myPOs.append(new_link)
                     memory.Links.append(new_link)
                     break
-    # done. 
+    # done.
     return memory
 
 # function to calculate over-all same/diff from entropy.
@@ -3703,10 +3714,11 @@ def rel_gen_routine(memory, gamma, recip_analog):
     return memory
 
 # ekaterina: function to infer a new RB unit
-def infer_RB(memory, new_RB):
+def infer_RB(memory, new_RB, set, analog):
     # if there is no new_RB, make one and assign it to new_RB
     if not new_RB:
-        newSet_new_RB = dataTypes.RBUnit('nil', 'memory', 0, True, 'null') # ekaterina 'memory' instead of 'newSet'
+        newSet_new_RB = dataTypes.RBUnit('nil', set, analog, True, analog)
+        analog.myRBs.append(newSet_new_RB)
         newSet_new_RB.act = 1.0
         memory.RBs.append(newSet_new_RB)
         # memory.newSet.RBs.append(newSet_new_RB)
@@ -3714,9 +3726,10 @@ def infer_RB(memory, new_RB):
     return memory, new_RB
 
 # ekaterina: function to assist do_compression(); the non-compressed part of the driver gets copied into a new proposition
-def infer_PO(memory, new_RB, gamma):
+def infer_PO(memory, new_RB, gamma, set):
     # find the most active PO, and if that PO has already caused a PO to be inferred in newSet, learn connections between the inferred PO and active semantics and the new_RB, or otherwise infer a PO in newSet to match the most active PO
     most_active_PO = get_most_active_unit(memory.driver.POs)
+    # print(most_active_PO)
     if most_active_PO.my_made_unit:
         # update my newSet unit (set activation to 1.0, connect to active semantics).
         most_active_PO.my_made_unit.act = 1.0
@@ -3753,9 +3766,9 @@ def infer_PO(memory, new_RB, gamma):
     else: # I have not caused a unit to be inferred.
         # infer a newSet PO unit (with activation 1.0) and add it to memory. Set the value of the .myanalog field to 'null', as you will create an analog to house all newSet units at the end of the .doCompression() routine
         # give the new PO the name 'nil' + the len(memory.POs)+1.
-        new_PO_name = 'nil' + str(len(memory.POs)+1)
-        # new_PO_name = 'new_' + most_active_PO.name
-        newSet_new_PO = dataTypes.POUnit(new_PO_name, 'memory', 0, True, 'null', most_active_PO.predOrObj) # ekaterina 'memory' instead of 'newSet'
+        # new_PO_name = 'nil' + str(len(memory.POs)+1)
+        new_PO_name = 'new_' + most_active_PO.name
+        newSet_new_PO = dataTypes.POUnit(new_PO_name, set, 0, True, 'null', most_active_PO.predOrObj)
         newSet_new_PO.act = 1.0
         newSet_new_PO.my_maker_unit = most_active_PO
         most_active_PO.my_made_unit = newSet_new_PO
@@ -3775,16 +3788,16 @@ def find_objs_compression(driver):
     # returns.
     return objs_compression
 
-# ekaterina: major overhaul of function to perform compression operations
-def compression_routine(memory, made_RB, compressedPO, ho_sem, gamma):
+# ekaterina: preforms main compression operations
+def compression_routine(memory, made_RB, compressed_PO, ho_sem, set, gamma, analog):
     # find the most active PO
     most_active_PO = get_most_active_unit(memory.driver.POs)
-
-    # if there is no made_RB, make one, and set made_RB to that RB.
+        # if there is no made_RB, make one, and set made_RB to that RB.
     if not made_RB:
         # newSet_new_RB = dataTypes.RBUnit('nil', 'newSet', 0, True, 'null')
-        made_RB = dataTypes.RBUnit('nil', 'memory', 0, True, 'null') # 'memory' instead of 'newSet'
+        made_RB = dataTypes.RBUnit('nil', set, analog, True, analog)
         made_RB.act = 1.0
+        analog.myRBs.append(made_RB)
         memory.RBs.append(made_RB)
         # add to the emerging recipient proxy, newSet
         # memory.newSet.RBs.append(made_RB)
@@ -3795,21 +3808,21 @@ def compression_routine(memory, made_RB, compressedPO, ho_sem, gamma):
         # a name for a new cumulative predicate which consists of names of all the active predicates
         for pred in most_active_PO.same_RB_POs:
             newPOname += pred.name
-        compressedPO = dataTypes.POUnit(newPOname, 'memory', 0, True, 'null', 1) # 'memory' instead of 'newSet'
-        compressedPO.act = 1.0
+        compressed_PO = dataTypes.POUnit(newPOname, set, analog, True, analog, 1)
+        compressed_PO.act = 1.0
 
-        # learn a connection between the compressed predicate and made_RB
-        compressedPO.my_maker_unit = made_RB
-        made_RB.my_made_unit = compressedPO
+        # compressed_PO.my_maker_unit = made_RB
+        # made_RB.my_made_unit = compressed_PO
 
-        memory.POs.append(compressedPO)
+        memory.POs.append(compressed_PO)
+        analog.myPOs.append(compressed_PO)
         # add to the emerging recipient proxy, newSet
-        # memory.newSet.POs.append(compressedPO)
-        # compressedPO = newSet_new_PO
+        # memory.newSet.POs.append(compressed_PO)
+        # compressed_PO = newSet_new_PO
 
         # learn connection between made_RB and compressed predicate
-        made_RB.myPred.append(compressedPO)
-        compressedPO.myRBs.append(made_RB)
+        made_RB.myPred.append(compressed_PO)
+        compressed_PO.myRBs.append(made_RB)
 
     # if the most active PO has already caused a PO to be inferred in newSet, learn connections between the inferred PO and active semantics, otherwise infer a PO to match the most active PO.
     if most_active_PO.predOrObj == 0 and most_active_PO.my_made_unit:
@@ -3824,8 +3837,8 @@ def compression_routine(memory, made_RB, compressedPO, ho_sem, gamma):
                     Link.weight += (1*(Link.mySemantic.act-Link.weight)*gamma)
                     connected_to_newSetPO = True
 
-            # if not connected_to_newPO, then learn a connection if semantic.act > 0.
-            if (not connected_to_newSetPO) and (semantic.act > 0):
+            # if the semantic is not connected to the newly created PO, learn a connection if semantic.act > 0 and the semantic is not higher-order
+            if (not connected_to_newSetPO) and (semantic.act > 0) and (semantic.ont_status != 'HO'):
                 # infer a new Link for new PO and active semantic.
                 new_Link = dataTypes.Link(most_active_PO.my_made_unit, 'nil', semantic, 0.0)
                 # update the weight of the Link.
@@ -3854,14 +3867,15 @@ def compression_routine(memory, made_RB, compressedPO, ho_sem, gamma):
         # infer a newSet PO unit (with activation 1.0) and add it to memory. Set the value of the .myanalog field to 'null', as you will create an analog to house all newSet units at the end of the .doCompression() routine above.
         if most_active_PO.predOrObj == 0:
             # name for the object
-            new_PO_name = 'nil' + str(len(memory.POs)+1)
-            # new_PO_name = 'new_' + most_active_PO.name
-            newSet_new_PO = dataTypes.POUnit(new_PO_name, 'memory', 0, True, 'null', 0) # 'memory' instead of 'newSet'
+            # new_PO_name = 'nil' + str(len(memory.POs)+1)
+            new_PO_name = 'new_' + most_active_PO.name
+            newSet_new_PO = dataTypes.POUnit(new_PO_name, set, analog, True, analog, 0)
             newSet_new_PO.act = 1.0
             newSet_new_PO.my_maker_unit = most_active_PO
             most_active_PO.my_made_unit = newSet_new_PO
             # add now PO unit to memory
             memory.POs.append(newSet_new_PO)
+            analog.myPOs.append(newSet_new_PO)
             # add to the emerging recipient proxy, newSet
             # print('\n' + newSet_new_PO.name + '\n')
             # memory.newSet.POs.append(newSet_new_PO)
@@ -3883,13 +3897,13 @@ def compression_routine(memory, made_RB, compressedPO, ho_sem, gamma):
                 ho_sem = dataTypes.Semantic(sem_name, None, None, 'HO')
                 memory.semantics.append(ho_sem)
 
-            # learn a connection between the new HO semantic and compressedPO
-            newLink = dataTypes.Link(compressedPO, 'nil', ho_sem, 1.0)
-            compressedPO.mySemantics.append(newLink)
+            # learn a connection between the new HO semantic and compressed_PO
+            newLink = dataTypes.Link(compressed_PO, 'nil', ho_sem, 1.0)
+            compressed_PO.mySemantics.append(newLink)
             ho_sem.myPOs.append(newLink)
             memory.Links.append(newLink)
 
-    return memory, made_RB, compressedPO, ho_sem
+    return memory, made_RB, compressed_PO, ho_sem
 
 # ekaterina: function to find compressed predicates -- the ones with higher-order semantics
 def find_preds_to_unpack(driver):
@@ -3903,6 +3917,7 @@ def find_preds_to_unpack(driver):
                     break
     return preds_to_unpack
 
+# ekaterina: for unpacking_routine()
 def create_PO(memory, most_active_PO):
     new_PO_name = 'nil' + str(len(memory.POs)+1)
     # new_PO_name = 'new_' + most_active_PO.name
@@ -3930,7 +3945,7 @@ def unpacking_routine(memory, made_RBs, currentPO, gamma, tokenize):
     # if made_RBs is an empty list, make new RBs, one for each unpacked role
     if not made_RBs:
         for i in range(hoSemCount):
-            memory, made_RB = infer_RB(memory, None)
+            memory, made_RB = infer_RB(memory, None, 'memory', None)
             made_RBs.append(made_RB)
 
     # DEPENDING ON WHETHER WE TOKENIZE the object over unpacked roles or not:
@@ -3940,7 +3955,7 @@ def unpacking_routine(memory, made_RBs, currentPO, gamma, tokenize):
         # if the most active PO has already caused a PO to be inferred, learn connections between the inferred PO and active semantics and the made_RB, or otherwise infer a PO to match the most active PO.
         if most_active_PO.predOrObj == 0:
             # only one copy if inferred; it is bound to the first new RB in infer_PO()
-            memory, made_RBs[0] = infer_PO(memory, made_RBs[0], gamma)
+            memory, made_RBs[0] = infer_PO(memory, made_RBs[0], gamma, 'memory')
             # the inferred PO unit needs to be bound to both new RBs; so bind it to the second one here
             made_RBs[1].myObj.append(most_active_PO.my_made_unit)
             most_active_PO.my_made_unit.myRBs.append(made_RBs[1])
@@ -4620,4 +4635,32 @@ def print_analog(analog): # ekaterina
                 print('Obj: ' + po.name)
         print('\n')
 
+# ekaterina: add a category to the objects of an analog in the driver as a new semantic
+def add_category(memory, category):
+    if category not in memory.semantics:
+        new_sem = dataTypes.Semantic(category)
+        memory.semantics.append(new_sem)
+    else:
+        for sem in memory.semantics:
+            if sem.name == category:
+                new_sem = sem
 
+    for cPO in memory.driver.POs:
+        if cPO.predOrObj == 0:
+            new_link = dataTypes.Link(cPO, [], new_sem, 1)
+            memory.Links.append(new_link)
+            cPO.mySemantics.append(new_link)
+            new_sem.myPOs.append(new_link)
+
+    return memory
+
+# ekaterina: extract the category of the exemplar in the recipient
+def extract_category(memory, cat1, cat2):
+    retrieved_cat = ''
+    if memory.recipient.POs:
+        for po in memory.recipient.POs:
+            for link in po.mySemantics:
+                if link.mySemantic.name == cat1 or link.mySemantic.name == cat2:
+                    retrieved_cat = link.mySemantic.name
+                    break
+    return retrieved_cat
