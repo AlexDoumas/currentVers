@@ -2354,7 +2354,7 @@ def schema_requirements(memory):
 
 # check if requirements for relational generalization are met.
 def rel_gen_requirements(memory):
-    threshold = 0.6 # ekaterina changed, it was 0.7
+    threshold = 0.7
     do_inference = False
     # make sure that at least one driver unit maps to a recipient unit.
     for myP in memory.driver.Ps:
@@ -2371,20 +2371,20 @@ def rel_gen_requirements(memory):
             if myPO.max_map > 0.0:
                 do_inference = True
                 break
-    # now make sure that for units in the driver that do map, the mapping is above threshold(=.7). # ekaterina: threshold = .6
+    # now make sure that for units in the driver that do map, the mapping is above threshold(=.7).
     if do_inference:
         for myP in memory.driver.Ps:
-            if threshold > myP.max_map > 0.0: # ekaterina
+            if threshold > myP.max_map > 0.0: 
                 do_inference = False
                 break
     if do_inference:
         for myRB in memory.driver.RBs:
-            if threshold > myP.max_map > 0.0: # ekaterina
+            if threshold > myRB.max_map > 0.0: 
                 do_inference = False
                 break
     if do_inference:
         for myPO in memory.driver.POs:
-            if threshold > myP.max_map > 0.0: # ekaterina
+            if threshold > myPO.max_map > 0.0: 
                 do_inference = False
                 break
     # returns.
