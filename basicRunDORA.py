@@ -652,15 +652,19 @@ class runDORA(object):
         self.asDORA = True
         # Only done with RBs, so only do if count_by_RBs is True.
         if self.count_by_RBs:
+            if self.memory.driver.POs[0].myanalog is self.memory.recipient.POs[0].myanalog:
+                pdb.set_trace()
             # find the analog in which all mapping driver units live.
             driver_analog = find_driver_analog_rel_gen(self.memory)
-            self.group_recip_maps()
+            #self.group_recip_maps()
             # find the analog that contains the mapped recipient units so that it can be passed to the rel_gen_routine().
             recip_analog = find_recip_analog(self.memory)
             # do initialize network operations (steps 1-3 above).
             self.do_1_to_3(mapping=False)
             phase_sets = 1
             for phase_set in range(phase_sets):
+                if self.memory.driver.POs[0].myanalog is self.memory.recipient.POs[0].myanalog:
+                    pdb.set_trace()
                 # fire all RBs in the driver analog that contains mapped elements.
                 if len(driver_analog.myRBs) > 0:
                     for currentRB in driver_analog.myRBs:
@@ -669,6 +673,8 @@ class runDORA(object):
                         self.local_inhibitor_fired = False
                         # 4.1-4.2) Fire the current RB in the firingOrder. Update the network in discrete time-steps until the globalInhibitor fires (i.e., the current active RB is inhibited by its inhibitor).
                         while self.memory.globalInhibitor.act == 0:
+                            if self.memory.driver.POs[0].myanalog is self.memory.recipient.POs[0].myanalog:
+                                pdb.set_trace()
                             # 4.3.1-4.3.10) update network activations.
                             currentRB.act = 1.0
                             self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False) # ekaterina: added retrieval_license
@@ -680,6 +686,8 @@ class runDORA(object):
                             phase_set_iterator += 1
                             if self.doGUI:
                                 self.time_step_doGUI(phase_set_iterator)
+                            if self.memory.driver.POs[0].myanalog is self.memory.recipient.POs[0].myanalog:
+                                pdb.set_trace()
                         # RB firing is OVER.
                         self.post_count_by_operations()
                     # phase_set is over.
@@ -1032,6 +1040,7 @@ class runDORA(object):
                 myP.get_Pmode()
         # 4.3.3) Update input to driver token units.
         self.memory = update_driver_inputs(self.memory, self.asDORA, self.lateral_input_level)
+        #print("I've just updated the input to all driver units...")
         # 4.3.4-5) Update input to and activation of PO and RB inhibitors.
         for myRB in self.memory.driver.RBs:
             myRB.update_inhibitor_input()
@@ -1058,6 +1067,8 @@ class runDORA(object):
         # 4.3.9) Update input to all tokens in the recipient and emerging recipient (i.e., newSet).
         self.memory = update_recipient_inputs(self.memory, self.asDORA, phase_set, self.lateral_input_level, self.ignore_object_semantics)
         self.memory = update_newSet_inputs(self.memory)
+        #print("I've just updated the input to all recipient units...")
+        #DORA_GUI.full_term_state_display(self.memory)
         # 4.3.10) Update activations of all units in the driver, recipient, and newSet, and all semanticss.
         self.memory = update_activations_run(self.memory, self.gamma, self.delta, self.HebbBias, phase_set)
 
@@ -2262,15 +2273,9 @@ def schema_requirements(memory):
                 elif myRB.myPred[0].max_map < threshold:
                     do_schematize = False
                     break
-                # check whther the object or the P (if the RB is higher_order) is below threshold
-                elif len(myRB.myObj) > 0:
-                    if myRB.myObj[0].max_map < threshold:
-                        do_schematize = False
-                        break
-                elif len(myRB.myChildP) > 0:
-                    if myRB.myChildP[0].max_map < threshold:
-                        do_schematize = False
-                        break
+                elif myRB.myObj[0].max_map < threshold:
+                    do_schematize = False
+                    break
             if not do_schematize:
                 break
     if do_schematize:
@@ -2283,14 +2288,9 @@ def schema_requirements(memory):
                 if myRB.myPred[0].max_map < threshold:
                     do_schematize = False
                     break
-                elif len(myRB.myObj) > 0: 
-                    if myRB.myObj[0].max_map < threshold:
-                        do_schematize = False
-                        break
-                elif len(myRB.myChildP) > 0: 
-                    if myRB.myChildP[0].max_map < threshold:
-                        do_schematize = False
-                        break
+                elif myRB.myObj[0].max_map < threshold:
+                    do_schematize = False
+                    break
                 elif len(myRB.myParentPs) > 0:
                     if myRB.myParentPs[0].max_map < threshold:
                         do_schematize = False
@@ -2315,14 +2315,9 @@ def schema_requirements(memory):
                     elif myRB.myPred[0].max_map < threshold:
                         do_schematize = False
                         break
-                    elif len(myRB.myObj) > 0: 
-                        if myRB.myObj[0].max_map < threshold:
-                            do_schematize = False
-                            break
-                    elif len(myRB.myChildP) > 0: 
-                        if myRB.myChildP[0].max_map < threshold:
-                            do_schematize = False
-                            break
+                    elif myRB.myObj[0].max_map < threshold:
+                        do_schematize = False
+                        break
                 if not do_schematize:
                     break
     if do_schematize:
@@ -2335,14 +2330,9 @@ def schema_requirements(memory):
                 if myRB.myPred[0].max_map < threshold:
                     do_schematize = False
                     break
-                elif len(myRB.myObj) > 0: 
-                    if myRB.myObj[0].max_map < threshold:
-                        do_schematize = False
-                        break
-                elif len(myRB.myChildP) > 0: 
-                    if myRB.myChildP[0].max_map < threshold:
-                        do_schematize = False
-                        break
+                elif myRB.myObj[0].max_map < threshold:
+                    do_schematize = False
+                    break
                 elif len(myRB.myParentPs) > 0:
                     if myRB.myParentPs[0].max_map < threshold:
                         do_schematize = False
@@ -4563,8 +4553,8 @@ def create_RB_dict(myRB, analog_counter):
         object_name = 'non_exist'
         object_sems = [] # there are no semantics.
         # if there is a child P, then create a new sym_dict with that P unit, and set P_name, to the name of that P_unit.
-        p_dict = create_dict_P(myRB.myChildP[0], analog_counter)
-        P_name = myRB.myChildP[0].name
+        p_dict = create_dict_P(myRB.myChildP, analog_counter)
+        P_name = myRB.myChildP.name
     else:
         higher_order = False
         object_name = myRB.myObj[0].name
