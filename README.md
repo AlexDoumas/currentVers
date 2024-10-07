@@ -340,7 +340,7 @@ It is also possible to create sim files were the weights between POs and their s
 - `'name'` is the name of the semantic (again, the name carries no information for the model, but can be useful for the modeller in keeping track of units during simulations)
 - `weight` specifies the weight between the semantic and the predicate or object (any real valued number between 0 and 1 inclusive),
 - `property` is either set to the source of the metric dimension (e.g., the extent of effort of the inferior rectus muscle in pixels), or `'nil'` otherwise
-- `extent` specifies the absolute value extent (as an integer? real?) of the metric property or `'nil'`, otherwise. As noted above, this value is unpacked into real nodes during processing)
+- `extent` specifies the absolute value extent (as an integer? real?) of the metric property or `'nil'`, otherwise. (As noted above, this value is unpacked into real nodes during processing)
 - `type` is set to either `'value'`, if the semantic encodes a compressed metric property like pixels, or `'state'`, for all other features.
 
 You can also create sim files with propositions that are only single-place predicates (i.e., objects bound to predicates linked by a RB unit, with no P unit), or unbound objects (i.e., objects bound to no predicates). Below are examples of how to create such propositions.

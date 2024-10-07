@@ -11,52 +11,62 @@ import numpy as np
 import dataTypes
 import DORA_GUI
 import buildNetwork
+
 if not run_on_iphone:
     import pygame
     from pygame.locals import *
 import pdb
 
 # Initialize pygame screen size to 1200x800.
-#screen_width = 1200.0
-#screen_height = 700.0
+# screen_width = 1200.0
+# screen_height = 700.0
+
 
 # class that performs all the run operations in DORA. In class form so that new operations (e.g., compression, predicate recognition) can be implemented as new functions in this class (under the phase set section).
 class runDORA(object):
     def __init__(self, memory, parameters):
         self.memory = memory
-        self.firingOrderRule = parameters['firingOrderRule']
-        self.firingOrder = None # initialized to None.
-        self.asDORA = parameters['asDORA']
-        self.gamma = parameters['gamma']
-        self.delta = parameters['delta']
-        self.eta = parameters['eta']
-        self.HebbBias = parameters['HebbBias']
-        self.lateral_input_level = parameters['lateral_input_level']
-        self.strategic_mapping = parameters['strategic_mapping']
-        self.ignore_object_semantics = parameters['ignore_object_semantics']
-        self.ignore_memory_semantics = parameters['ignore_memory_semantics']
-        self.mag_decimal_precision = parameters['mag_decimal_precision']
-        self.exemplar_memory = parameters['exemplar_memory']
-        self.recent_analog_bias = parameters['recent_analog_bias']
-        self.bias_retrieval_analogs = parameters['bias_retrieval_analogs']
-        self.use_relative_act = parameters['use_relative_act']
-        self.ho_sem_act_flow = parameters['ho_sem_act_flow'] # allows flow of activation; -1: only from regular semantics to higher-order semantics; 1: only from higher-order semantics to regular semantics; 0: in both directions
-        self.tokenize = parameters['tokenize'] # ekaterina: the parameter for unpacking; if tokenize == True: create two copies of unpacked object in memory bound to two roles in two different analogs; if tokenize == False: create one object bound to two unpacked roles in one analog
-        self.remove_uncompressed = parameters['remove_uncompressed']  # ekaterina: allows to choose whether to delete or to leave the original uncompressed structure from LTM after do_compress()
-        self.remove_compressed = parameters['remove_compressed']  # ekaterina: allows to choose whether to delete or to leave the original compressed structure from LTM after do_unpacking()
+        self.firingOrderRule = parameters["firingOrderRule"]
+        self.firingOrder = None  # initialized to None.
+        self.asDORA = parameters["asDORA"]
+        self.gamma = parameters["gamma"]
+        self.delta = parameters["delta"]
+        self.eta = parameters["eta"]
+        self.HebbBias = parameters["HebbBias"]
+        self.lateral_input_level = parameters["lateral_input_level"]
+        self.strategic_mapping = parameters["strategic_mapping"]
+        self.ignore_object_semantics = parameters["ignore_object_semantics"]
+        self.ignore_memory_semantics = parameters["ignore_memory_semantics"]
+        self.mag_decimal_precision = parameters["mag_decimal_precision"]
+        self.exemplar_memory = parameters["exemplar_memory"]
+        self.recent_analog_bias = parameters["recent_analog_bias"]
+        self.bias_retrieval_analogs = parameters["bias_retrieval_analogs"]
+        self.use_relative_act = parameters["use_relative_act"]
+        self.ho_sem_act_flow = parameters[
+            "ho_sem_act_flow"
+        ]  # allows flow of activation; -1: only from regular semantics to higher-order semantics; 1: only from higher-order semantics to regular semantics; 0: in both directions
+        self.tokenize = parameters[
+            "tokenize"
+        ]  # ekaterina: the parameter for unpacking; if tokenize == True: create two copies of unpacked object in memory bound to two roles in two different analogs; if tokenize == False: create one object bound to two unpacked roles in one analog
+        self.remove_uncompressed = parameters[
+            "remove_uncompressed"
+        ]  # ekaterina: allows to choose whether to delete or to leave the original uncompressed structure from LTM after do_compress()
+        self.remove_compressed = parameters[
+            "remove_compressed"
+        ]  # ekaterina: allows to choose whether to delete or to leave the original compressed structure from LTM after do_unpacking()
         if run_on_iphone:
             self.doGUI = False
         else:
-            self.doGUI = parameters['doGUI']
+            self.doGUI = parameters["doGUI"]
         self.screen = 0
-        self.GUI_information = None # initialize to None.
-        self.screen_width = parameters['screen_width']
-        self.screen_height = parameters['screen_height']
-        self.GUI_update_rate = parameters['GUI_update_rate']
-        self.starting_iteration = parameters['starting_iteration']
+        self.GUI_information = None  # initialize to None.
+        self.screen_width = parameters["screen_width"]
+        self.screen_height = parameters["screen_height"]
+        self.GUI_update_rate = parameters["GUI_update_rate"]
+        self.starting_iteration = parameters["starting_iteration"]
         self.num_phase_sets_to_run = None
-        self.count_by_RBs = None # initialize to None.
-        self.local_inhibitor_fired = False # initialize to False.
+        self.count_by_RBs = None  # initialize to None.
+        self.local_inhibitor_fired = False  # initialize to False.
 
     ######################################
     ###### DORA OPERATION FUNCTIONS ######
@@ -83,7 +93,9 @@ class runDORA(object):
         self.memory = update_same_RB_POs(self.memory)
         # initialize GUI if necessary.
         if self.doGUI:
-            self.screen, self.GUI_information = DORA_GUI.initialize_GUI(self.screen_width, self.screen_height, self.memory)
+            self.screen, self.GUI_information = DORA_GUI.initialize_GUI(
+                self.screen_width, self.screen_height, self.memory
+            )
         # get PO SemNormalizations.
         for myPO in self.memory.POs:
             myPO.get_weight_length()
@@ -148,7 +160,12 @@ class runDORA(object):
                     while self.memory.globalInhibitor.act == 0:
                         # 4.3.1-4.3.10) update network activations.
                         currentRB.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=True) # ekaterina: added retrieval_license
+                        self.time_step_activations(
+                            phase_set,
+                            self.ignore_object_semantics,
+                            self.ignore_memory_semantics,
+                            retrieval_license=True,
+                        )  # ekaterina: added retrieval_license
                         # 4.3.11) Update mapping hypotheses.
                         self.memory = update_mappingHyps(self.memory)
                         # fire the local_inhibitor if necessary.
@@ -175,7 +192,12 @@ class runDORA(object):
                     while self.memory.localInhibitor.act == 0:
                         # 4.3.1-4.3.10) update network activations.
                         currentPO.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=True) # ekaterina: added retrieval_license
+                        self.time_step_activations(
+                            phase_set,
+                            self.ignore_object_semantics,
+                            self.ignore_memory_semantics,
+                            retrieval_license=True,
+                        )  # ekaterina: added retrieval_license
                         # 4.3.11) Update mapping hypotheses.
                         self.memory = update_mappingHyps(self.memory)
                         # fire the local_inhibitor if necessary.
@@ -212,9 +234,22 @@ class runDORA(object):
                     while self.memory.globalInhibitor.act == 0:
                         # 4.3.1-4.3.10) update network activations.
                         currentRB.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=True) # ekaterina: added retrieval_license
+                        self.time_step_activations(
+                            phase_set,
+                            self.ignore_object_semantics,
+                            self.ignore_memory_semantics,
+                            retrieval_license=True,
+                        )  # ekaterina: added retrieval_license
                         # 4.3.12) Run retrieval routines.
-                        self.memory = retrieval_routine(self.memory, self.asDORA, self.gamma, self.delta, self.HebbBias, self.lateral_input_level, self.bias_retrieval_analogs)
+                        self.memory = retrieval_routine(
+                            self.memory,
+                            self.asDORA,
+                            self.gamma,
+                            self.delta,
+                            self.HebbBias,
+                            self.lateral_input_level,
+                            self.bias_retrieval_analogs,
+                        )
                         # fire the local_inhibitor if necessary.
                         self.time_step_fire_local_inhibitor()
                         # update GUI.
@@ -236,9 +271,22 @@ class runDORA(object):
                     while self.memory.localInhibitor.act == 0:
                         # 4.3.1-4.3.10) update network activations.
                         currentPO.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=True) # ekaterina: added retrieval_license
+                        self.time_step_activations(
+                            phase_set,
+                            self.ignore_object_semantics,
+                            self.ignore_memory_semantics,
+                            retrieval_license=True,
+                        )  # ekaterina: added retrieval_license
                         # 4.3.12) Run retrieval routines.
-                        self.memory = retrieval_routine(self.memory, self.asDORA, self.gamma, self.delta, self.HebbBias, self.lateral_input_level, self.bias_retrieval_analogs)
+                        self.memory = retrieval_routine(
+                            self.memory,
+                            self.asDORA,
+                            self.gamma,
+                            self.delta,
+                            self.HebbBias,
+                            self.lateral_input_level,
+                            self.bias_retrieval_analogs,
+                        )
                         # fire the local_inhibitor if necessary.
                         self.time_step_fire_local_inhibitor()
                         # update GUI.
@@ -267,9 +315,22 @@ class runDORA(object):
                     while phase_set_iterator < 7:
                         # 4.3.1-4.3.10) update network activations.
                         currentRB.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=True) # ekaterina: added retrieval_license
+                        self.time_step_activations(
+                            phase_set,
+                            self.ignore_object_semantics,
+                            self.ignore_memory_semantics,
+                            retrieval_license=True,
+                        )  # ekaterina: added retrieval_license
                         # 4.3.12) Run retrieval routines.
-                        self.memory = retrieval_routine(self.memory, self.asDORA, self.gamma, self.delta, self.HebbBias, self.lateral_input_level, self.bias_retrieval_analogs)
+                        self.memory = retrieval_routine(
+                            self.memory,
+                            self.asDORA,
+                            self.gamma,
+                            self.delta,
+                            self.HebbBias,
+                            self.lateral_input_level,
+                            self.bias_retrieval_analogs,
+                        )
                         # update GUI.
                         phase_set_iterator += 1
                         if self.doGUI:
@@ -289,9 +350,22 @@ class runDORA(object):
                     while phase_set_iterator < 4:
                         # 4.3.1-4.3.10) update network activations.
                         currentPO.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=True) # ekaterina: added retrieval_license
+                        self.time_step_activations(
+                            phase_set,
+                            self.ignore_object_semantics,
+                            self.ignore_memory_semantics,
+                            retrieval_license=True,
+                        )  # ekaterina: added retrieval_license
                         # 4.3.12) Run retrieval routines.
-                        self.memory = retrieval_routine(self.memory, self.asDORA, self.gamma, self.delta, self.HebbBias, self.lateral_input_level, self.bias_retrieval_analogs)
+                        self.memory = retrieval_routine(
+                            self.memory,
+                            self.asDORA,
+                            self.gamma,
+                            self.delta,
+                            self.HebbBias,
+                            self.lateral_input_level,
+                            self.bias_retrieval_analogs,
+                        )
                         # update GUI.
                         phase_set_iterator += 1
                         if self.doGUI:
@@ -304,6 +378,7 @@ class runDORA(object):
             self.post_phase_set_operations(retrieval_license=True, map_license=False)
 
         # operations for DORA's same/different/more/less detection using simple entropy. Find instances of same/different and more/less using entropy.
+
     def do_entropy_ops_within(self, pred_only):
         # within (entropy over items from the same analog in the driver/recipient) set entropy_ops are used to compute specific kinds of similarity/difference/magnitude over dimensions in the same analog in the driver.
         extend_SDML = True
@@ -337,11 +412,25 @@ class runDORA(object):
                         pred_list.append(myRB.myPred[0])
                     # check all PO pairs.
                     for myPO in pred_list:
-                        for myPO2 in pred_list[pred_list.index(myPO)+1:]:
+                        for myPO2 in pred_list[pred_list.index(myPO) + 1 :]:
                             if (myPO is not myPO2) and (myPO.predOrObj == myPO2.predOrObj):
                                 # check if they code the same dimension (are they both connected to a semantic unit coding a dimension with a weight near 1?), and whether any POs are connected to any SDM semantics (i.e., "more", "less", or "same") at all, or both are connected to SDM semantics below threshold.
-                                intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh = en_based_mag_checks(myPO, myPO2)
-                                new_dict = {'PO1': myPO, 'PO2': myPO2, 'intersect_dim': intersect_dim, 'one_mag_sem_present': one_mag_sem_present, 'both_mag_sem_present': both_mag_sem_present, 'one_mag_sem_present_belowThresh': one_mag_sem_present_belowThresh, 'both_mag_sem_present_belowThresh': both_mag_sem_present_belowThresh}
+                                (
+                                    intersect_dim,
+                                    one_mag_sem_present,
+                                    both_mag_sem_present,
+                                    one_mag_sem_present_belowThresh,
+                                    both_mag_sem_present_belowThresh,
+                                ) = en_based_mag_checks(myPO, myPO2)
+                                new_dict = {
+                                    "PO1": myPO,
+                                    "PO2": myPO2,
+                                    "intersect_dim": intersect_dim,
+                                    "one_mag_sem_present": one_mag_sem_present,
+                                    "both_mag_sem_present": both_mag_sem_present,
+                                    "one_mag_sem_present_belowThresh": one_mag_sem_present_belowThresh,
+                                    "both_mag_sem_present_belowThresh": both_mag_sem_present_belowThresh,
+                                }
                                 if len(intersect_dim) >= 1:
                                     match_int_dim.append(new_dict)
                                 if both_mag_sem_present:
@@ -363,8 +452,37 @@ class runDORA(object):
                         ent_pair = random.choice(match_int_dim)
                     # now select and run appropriate en_op.
                     if ent_pair:
-                        myPO, myPO2, intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh = ent_pair['PO1'], ent_pair['PO2'], ent_pair['intersect_dim'], ent_pair['one_mag_sem_present'],  ent_pair['both_mag_sem_present'], ent_pair['one_mag_sem_present_belowThresh'], ent_pair['both_mag_sem_present_belowThresh']
-                        self.memory = check_and_run_ent_ops_within(myPO, myPO2, intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh, extend_SDML, pred_only, pred_present, self.memory, self.mag_decimal_precision)
+                        (
+                            myPO,
+                            myPO2,
+                            intersect_dim,
+                            one_mag_sem_present,
+                            both_mag_sem_present,
+                            one_mag_sem_present_belowThresh,
+                            both_mag_sem_present_belowThresh,
+                        ) = (
+                            ent_pair["PO1"],
+                            ent_pair["PO2"],
+                            ent_pair["intersect_dim"],
+                            ent_pair["one_mag_sem_present"],
+                            ent_pair["both_mag_sem_present"],
+                            ent_pair["one_mag_sem_present_belowThresh"],
+                            ent_pair["both_mag_sem_present_belowThresh"],
+                        )
+                        self.memory = check_and_run_ent_ops_within(
+                            myPO,
+                            myPO2,
+                            intersect_dim,
+                            one_mag_sem_present,
+                            both_mag_sem_present,
+                            one_mag_sem_present_belowThresh,
+                            both_mag_sem_present_belowThresh,
+                            extend_SDML,
+                            pred_only,
+                            pred_present,
+                            self.memory,
+                            self.mag_decimal_precision,
+                        )
             elif len(analog.myRBs) > 0:
                 match_list = []
                 # find all predPOs.
@@ -373,35 +491,121 @@ class runDORA(object):
                     pred_list.append(myRB.myPred[0])
                 # check PO pairs.
                 for myPO in pred_list:
-                    for myPO2 in pred_list[pred_list.index(myPO)+1:]:
+                    for myPO2 in pred_list[pred_list.index(myPO) + 1 :]:
                         if (myPO is not myPO2) and (myPO.predOrObj == myPO2.predOrObj):
                             # check if they code the same dimension (are they both connected to a semantic unit coding a dimension with a weight near 1?), and whether any POs are connected to any SDM semantics (i.e., "more", "less", or "same") at all, or both are connected to SDM semantics below threshold.
-                            intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh = en_based_mag_checks(myPO, myPO2)
-                            new_dict = {'PO1': myPO, 'PO2': myPO2, 'intersect_dim': intersect_dim, 'one_mag_sem_present': one_mag_sem_present, 'both_mag_sem_present': both_mag_sem_present, 'one_mag_sem_present_belowThresh': one_mag_sem_present_belowThresh, 'both_mag_sem_present_belowThresh': both_mag_sem_present_belowThresh}
+                            (
+                                intersect_dim,
+                                one_mag_sem_present,
+                                both_mag_sem_present,
+                                one_mag_sem_present_belowThresh,
+                                both_mag_sem_present_belowThresh,
+                            ) = en_based_mag_checks(myPO, myPO2)
+                            new_dict = {
+                                "PO1": myPO,
+                                "PO2": myPO2,
+                                "intersect_dim": intersect_dim,
+                                "one_mag_sem_present": one_mag_sem_present,
+                                "both_mag_sem_present": both_mag_sem_present,
+                                "one_mag_sem_present_belowThresh": one_mag_sem_present_belowThresh,
+                                "both_mag_sem_present_belowThresh": both_mag_sem_present_belowThresh,
+                            }
                             if len(intersect_dim) >= 1:
                                 match_list.append(new_dict)
                 # Now the random selection of pair of POs if any exist.
                 if len(match_list) >= 1:
                     ent_pair = random.choice(match_list)
-                    myPO, myPO2, intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh = ent_pair['PO1'], ent_pair['PO2'], ent_pair['intersect_dim'], ent_pair['one_mag_sem_present'],  ent_pair['both_mag_sem_present'], ent_pair['one_mag_sem_present_belowThresh'], ent_pair['both_mag_sem_present_belowThresh']
+                    (
+                        myPO,
+                        myPO2,
+                        intersect_dim,
+                        one_mag_sem_present,
+                        both_mag_sem_present,
+                        one_mag_sem_present_belowThresh,
+                        both_mag_sem_present_belowThresh,
+                    ) = (
+                        ent_pair["PO1"],
+                        ent_pair["PO2"],
+                        ent_pair["intersect_dim"],
+                        ent_pair["one_mag_sem_present"],
+                        ent_pair["both_mag_sem_present"],
+                        ent_pair["one_mag_sem_present_belowThresh"],
+                        ent_pair["both_mag_sem_present_belowThresh"],
+                    )
                     # now select and run appropriate en_op.
-                    self.memory = check_and_run_ent_ops_within(myPO, myPO2, intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh, extend_SDML, pred_only, pred_present, self.memory, self.mag_decimal_precision)
+                    self.memory = check_and_run_ent_ops_within(
+                        myPO,
+                        myPO2,
+                        intersect_dim,
+                        one_mag_sem_present,
+                        both_mag_sem_present,
+                        one_mag_sem_present_belowThresh,
+                        both_mag_sem_present_belowThresh,
+                        extend_SDML,
+                        pred_only,
+                        pred_present,
+                        self.memory,
+                        self.mag_decimal_precision,
+                    )
             else:
                 match_list = []
                 for myPO in analog.myPOs:
-                    for myPO2 in analog.myPOs[analog.myPOs.index(myPO)+1:]:
+                    for myPO2 in analog.myPOs[analog.myPOs.index(myPO) + 1 :]:
                         if (myPO is not myPO2) and (myPO.predOrObj == myPO2.predOrObj):
                             # check if they code the same dimension (are they both connected to a semantic unit coding a dimension with a weight near 1?), and whether any POs are connected to any SDM semantics (i.e., "more", "less", or "same") at all, or both are connected to SDM semantics below threshold.
-                            intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh = en_based_mag_checks(myPO, myPO2)
+                            (
+                                intersect_dim,
+                                one_mag_sem_present,
+                                both_mag_sem_present,
+                                one_mag_sem_present_belowThresh,
+                                both_mag_sem_present_belowThresh,
+                            ) = en_based_mag_checks(myPO, myPO2)
                             if len(intersect_dim) >= 1:
-                                new_dict = {'PO1': myPO, 'PO2': myPO2, 'intersect_dim': intersect_dim, 'one_mag_sem_present': one_mag_sem_present, 'both_mag_sem_present': both_mag_sem_present, 'one_mag_sem_present_belowThresh': one_mag_sem_present_belowThresh, 'both_mag_sem_present_belowThresh': both_mag_sem_present_belowThresh}
+                                new_dict = {
+                                    "PO1": myPO,
+                                    "PO2": myPO2,
+                                    "intersect_dim": intersect_dim,
+                                    "one_mag_sem_present": one_mag_sem_present,
+                                    "both_mag_sem_present": both_mag_sem_present,
+                                    "one_mag_sem_present_belowThresh": one_mag_sem_present_belowThresh,
+                                    "both_mag_sem_present_belowThresh": both_mag_sem_present_belowThresh,
+                                }
                                 match_list.append(new_dict)
                 # Now the random selection of pair of POs if any exist.
                 if len(match_list) >= 1:
                     ent_pair = random.choice(match_list)
-                    myPO, myPO2, intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh = ent_pair['PO1'], ent_pair['PO2'], ent_pair['intersect_dim'], ent_pair['one_mag_sem_present'],  ent_pair['both_mag_sem_present'], ent_pair['one_mag_sem_present_belowThresh'], ent_pair['both_mag_sem_present_belowThresh']
+                    (
+                        myPO,
+                        myPO2,
+                        intersect_dim,
+                        one_mag_sem_present,
+                        both_mag_sem_present,
+                        one_mag_sem_present_belowThresh,
+                        both_mag_sem_present_belowThresh,
+                    ) = (
+                        ent_pair["PO1"],
+                        ent_pair["PO2"],
+                        ent_pair["intersect_dim"],
+                        ent_pair["one_mag_sem_present"],
+                        ent_pair["both_mag_sem_present"],
+                        ent_pair["one_mag_sem_present_belowThresh"],
+                        ent_pair["both_mag_sem_present_belowThresh"],
+                    )
                     # now select and run appropriate en_op.
-                    self.memory = check_and_run_ent_ops_within(myPO, myPO2, intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh, extend_SDML, pred_only, pred_present, self.memory, self.mag_decimal_precision)
+                    self.memory = check_and_run_ent_ops_within(
+                        myPO,
+                        myPO2,
+                        intersect_dim,
+                        one_mag_sem_present,
+                        both_mag_sem_present,
+                        one_mag_sem_present_belowThresh,
+                        both_mag_sem_present_belowThresh,
+                        extend_SDML,
+                        pred_only,
+                        pred_present,
+                        self.memory,
+                        self.mag_decimal_precision,
+                    )
         # done so change change mode back to LISA if you changed_mode is True.
         if changed_mode:
             self.asDORA = False
@@ -409,7 +613,7 @@ class runDORA(object):
     def do_entropy_ops_between(self, retrieval_license=False):
         # between (entropy over mapped items across the driver and recipient) set entropy_operations are used to compute over-all similarity/difference between mapped items.
         ##########
-        difference_ratio = 'undefined' # ekaterina
+        difference_ratio = "undefined"  # ekaterina
         # WAIT, DO I JUST WANNA DO SIMPLE SEMANTIC SIMILARITY CALCULATION USING SEMANTIC WEIGHTS? IF THEY MAP, COMPUTE THE SEMANTIC SIMILARITY BASED ON SEMANTIC WEIGHT VECTORS?
         # make sure that the .max_map_unit field has been filled in for all units.
         self.memory = get_max_map_units(self.memory)
@@ -423,7 +627,13 @@ class runDORA(object):
                 for iter_i in range(10):
                     # update semantic inputs.
                     for semantic in self.memory.semantics:
-                        semantic.update_input(self.memory, self.ho_sem_act_flow, retrieval_license, self.ignore_object_semantics, self.ignore_memory_semantics)
+                        semantic.update_input(
+                            self.memory,
+                            self.ho_sem_act_flow,
+                            retrieval_license,
+                            self.ignore_object_semantics,
+                            self.ignore_memory_semantics,
+                        )
                     # update sematnic activations.
                     max_input = get_max_sem_input(self.memory)
                     for semantic in self.memory.semantics:
@@ -431,7 +641,7 @@ class runDORA(object):
                         semantic.update_act()
                 # run basic ent_overall_same_diff() to compute the similarity_ratio between the mapped POs.
                 difference_ratio = ent_overall_same_diff(self.memory.semantics)
-                print (difference_ratio)
+                print(difference_ratio)
                 # finally, clear the inputs and activations of all current units.
                 self.memory = initialize_AM(self.memory)
         # and return difference_ratio.
@@ -467,9 +677,16 @@ class runDORA(object):
                 while self.memory.localInhibitor.act == 0:
                     # 4.3.1-4.3.10) update network activations.
                     currentPO.act = 1.0
-                    self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False) # ekaterina: added retrieval_license
+                    self.time_step_activations(
+                        phase_set,
+                        self.ignore_object_semantics,
+                        self.ignore_memory_semantics,
+                        retrieval_license=False,
+                    )  # ekaterina: added retrieval_license
                     # 4.3.13.1) Do predication.
-                    self.memory, made_new_pred = predication_routine(self.memory, made_new_pred, self.gamma)
+                    self.memory, made_new_pred = predication_routine(
+                        self.memory, made_new_pred, self.gamma
+                    )
                     self.time_step_fire_local_inhibitor()
                     # update GUI.
                     phase_set_iterator += 1
@@ -543,9 +760,16 @@ class runDORA(object):
                         while self.memory.globalInhibitor.act == 0:
                             # 4.3.1-4.3.10) update network activations.
                             currentRB.act = 1.0
-                            self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False) # ekaterina: added retrieval_license
+                            self.time_step_activations(
+                                phase_set,
+                                self.ignore_object_semantics,
+                                self.ignore_memory_semantics,
+                                retrieval_license=False,
+                            )  # ekaterina: added retrieval_license
                             # 4.3.13.2) Do whole-relation formation.
-                            self.memory, inferred_new_P = rel_form_routine(self.memory, inferred_new_P)
+                            self.memory, inferred_new_P = rel_form_routine(
+                                self.memory, inferred_new_P
+                            )
                             # fire the local_inhibitor if necessary.
                             self.time_step_fire_local_inhibitor()
                             # update GUI.
@@ -573,7 +797,7 @@ class runDORA(object):
                                 old_analog = myRB.myanalog
                                 # add the RB to new_analog (and vise versa).
                                 new_analog.myRBs.append(myRB)
-                                myRB.myanalog=new_analog
+                                myRB.myanalog = new_analog
                                 # remove the RB from old_analog.
                                 old_analog.myRBs.remove(myRB)
                                 # FOR DEBUGGING: I'm getting an odd error with looking for a non-existent object on every 4 runs or so. Throw up a try/except and see if you can catch the error.
@@ -600,9 +824,11 @@ class runDORA(object):
                                     self.memory.analogs.remove(old_analog)
                         else:
                             # delete the new P unit.
-                            del(self.memory.Ps[-1])
+                            del self.memory.Ps[-1]
                     # run post_phase_set_operations.
-                    self.post_phase_set_operations(retrieval_license=False, map_license=False, inferred_new_P=True)
+                    self.post_phase_set_operations(
+                        retrieval_license=False, map_license=False, inferred_new_P=True
+                    )
 
     def do_schematization(self):
         # Change asDORA mode to asDORA = True.
@@ -624,9 +850,16 @@ class runDORA(object):
                         while self.memory.globalInhibitor.act == 0:
                             # 4.3.1-4.3.10) update network activations.
                             currentRB.act = 1.0
-                            self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False) # ekaterina: added retrieval_license
+                            self.time_step_activations(
+                                phase_set,
+                                self.ignore_object_semantics,
+                                self.ignore_memory_semantics,
+                                retrieval_license=False,
+                            )  # ekaterina: added retrieval_license
                             # 4.3.13.3) Do schematization/predicate refinement.
-                            self.memory = schematization_routine(self.memory, self.gamma, phase_set_iterator)
+                            self.memory = schematization_routine(
+                                self.memory, self.gamma, phase_set_iterator
+                            )
                             # fire the local_inhibitor if necessary.
                             self.time_step_fire_local_inhibitor()
                             # update GUI.
@@ -656,7 +889,7 @@ class runDORA(object):
                 pdb.set_trace()
             # find the analog in which all mapping driver units live.
             driver_analog = find_driver_analog_rel_gen(self.memory)
-            #self.group_recip_maps()
+            # self.group_recip_maps()
             # find the analog that contains the mapped recipient units so that it can be passed to the rel_gen_routine().
             recip_analog = find_recip_analog(self.memory)
             # do initialize network operations (steps 1-3 above).
@@ -673,11 +906,19 @@ class runDORA(object):
                         self.local_inhibitor_fired = False
                         # 4.1-4.2) Fire the current RB in the firingOrder. Update the network in discrete time-steps until the globalInhibitor fires (i.e., the current active RB is inhibited by its inhibitor).
                         while self.memory.globalInhibitor.act == 0:
-                            if self.memory.driver.POs[0].myanalog is self.memory.recipient.POs[0].myanalog:
+                            if (
+                                self.memory.driver.POs[0].myanalog
+                                is self.memory.recipient.POs[0].myanalog
+                            ):
                                 pdb.set_trace()
                             # 4.3.1-4.3.10) update network activations.
                             currentRB.act = 1.0
-                            self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False) # ekaterina: added retrieval_license
+                            self.time_step_activations(
+                                phase_set,
+                                self.ignore_object_semantics,
+                                self.ignore_memory_semantics,
+                                retrieval_license=False,
+                            )  # ekaterina: added retrieval_license
                             # 4.3.14) Do relational inference.
                             self.memory = rel_gen_routine(self.memory, self.gamma, recip_analog)
                             # fire the local_inhibitor if necessary.
@@ -686,14 +927,17 @@ class runDORA(object):
                             phase_set_iterator += 1
                             if self.doGUI:
                                 self.time_step_doGUI(phase_set_iterator)
-                            if self.memory.driver.POs[0].myanalog is self.memory.recipient.POs[0].myanalog:
+                            if (
+                                self.memory.driver.POs[0].myanalog
+                                is self.memory.recipient.POs[0].myanalog
+                            ):
                                 pdb.set_trace()
                         # RB firing is OVER.
                         self.post_count_by_operations()
                     # phase_set is over.
                     self.post_phase_set_operations(retrieval_license=False, map_license=False)
         # make sure that any new items (i.e., those in the newSet) are part of an analog.
-        self.memory = newSet_items_to_analog(self.memory) # ekaterina
+        self.memory = newSet_items_to_analog(self.memory)  # ekaterina
         # return .asDORA state to starting .asDORA state.
         self.asDORA = DORA_state
 
@@ -725,7 +969,7 @@ class runDORA(object):
                 # for each compressed object, there will have a new RB in newSet that conjoins the object to the compressed pred. Initialise made_RB to None.
                 made_RB = None
                 # to make a telling name for made_RB
-                name = ''
+                name = ""
                 compressed_PO = None
                 # fire each object in the firing order until local inhibitor fires.
                 for currentPO in firingOrder:
@@ -738,9 +982,16 @@ class runDORA(object):
                     while self.memory.localInhibitor.act == 0:
                         # 4.3.1-4.3.10) update network activations.
                         currentPO.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False) # ekaterina: added retrieval_license
+                        self.time_step_activations(
+                            phase_set,
+                            self.ignore_object_semantics,
+                            self.ignore_memory_semantics,
+                            retrieval_license=False,
+                        )  # ekaterina: added retrieval_license
                         # Do compression.
-                        self.memory, made_RB, compressed_PO, ho_sem = compression_routine(self.memory, made_RB, compressed_PO, ho_sem, self.gamma)
+                        self.memory, made_RB, compressed_PO, ho_sem = compression_routine(
+                            self.memory, made_RB, compressed_PO, ho_sem, self.gamma
+                        )
                         # fire the local_inhibitor if necessary.
                         self.time_step_fire_local_inhibitor()
                         # update GUI.
@@ -780,8 +1031,8 @@ class runDORA(object):
 
             if full_prop_simple or full_prop_complex:
                 # create a new P unit
-                newPname = 'p_' + str(len(self.memory.Ps)+1)
-                compression_P = dataTypes.PUnit(newPname, 'newSet', None, True, None)
+                newPname = "p_" + str(len(self.memory.Ps) + 1)
+                compression_P = dataTypes.PUnit(newPname, "newSet", None, True, None)
                 compression_P.mode = 0
                 compression_P.act = 1.0
 
@@ -815,7 +1066,7 @@ class runDORA(object):
             # put all items in newSet in a new analog
             self.memory = newSet_items_to_analog(self.memory)
         else:
-            print('\nThere are no objects to compress over in the driver.\n')
+            print("\nThere are no objects to compress over in the driver.\n")
 
         # self.post_phase_set_operations(retrieval_license=False, map_license=False)
 
@@ -848,7 +1099,12 @@ class runDORA(object):
                 while self.memory.localInhibitor.act == 0:
                     # 4.3.1-4.3.10) update network activations.
                     currentPO.act = 1.0
-                    self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False)
+                    self.time_step_activations(
+                        phase_set,
+                        self.ignore_object_semantics,
+                        self.ignore_memory_semantics,
+                        retrieval_license=False,
+                    )
                     # infer copies of POs and connect them to a newly recruited RB
                     self.memory, new_RB = infer_RB(self.memory, new_RB)
                     self.memory, new_RB = infer_PO(self.memory, new_RB, self.gamma)
@@ -886,7 +1142,12 @@ class runDORA(object):
             while self.memory.localInhibitor.act == 0:
                 # 4.3.1-4.3.10) update network activations.
                 currentPO.act = 1.0
-                self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=False)
+                self.time_step_activations(
+                    phase_set,
+                    self.ignore_object_semantics,
+                    self.ignore_memory_semantics,
+                    retrieval_license=False,
+                )
                 # find the most active PO
                 most_active_PO = get_most_active_unit(self.memory.driver.POs)
                 # this is the RB which was created with the unpacked predicate and that still does not have an object
@@ -903,11 +1164,13 @@ class runDORA(object):
             self.memory = update_same_RB_POs(self.memory)
             if most_active_PO.predOrObj == 0:
                 for rb in self.memory.newSet.RBs:
-                    if not rb.myParentPs: # an RB which has not connection to any P units yet
+                    if not rb.myParentPs:  # an RB which has not connection to any P units yet
                         # print('rb.name: ' + rb.name)
-                        for p in self.memory.newSet.Ps: # checking both Ps in the newSet
+                        for p in self.memory.newSet.Ps:  # checking both Ps in the newSet
                             # print('p.name: ' + p.name)
-                            if rb.myPred[0].my_maker_unit != p.myRBs[0].myPred[0].my_maker_unit: # and whose predicate is not made by the same PO unit which made the predicate already bound to an object in the other RB of this P
+                            if (
+                                rb.myPred[0].my_maker_unit != p.myRBs[0].myPred[0].my_maker_unit
+                            ):  # and whose predicate is not made by the same PO unit which made the predicate already bound to an object in the other RB of this P
                                 p.myRBs.append(rb)
                                 rb.myParentPs.append(p)
 
@@ -950,9 +1213,16 @@ class runDORA(object):
                     while self.memory.localInhibitor.act == 0:
                         # 4.3.1-4.3.10) update network activations.
                         currentPO.act = 1.0
-                        self.time_step_activations(phase_set, self.ignore_object_semantics, self.ignore_memory_semantics, retrieval_license=True) # retrieval_license needs to be TRUE to UNPACK the compressed predicate
+                        self.time_step_activations(
+                            phase_set,
+                            self.ignore_object_semantics,
+                            self.ignore_memory_semantics,
+                            retrieval_license=True,
+                        )  # retrieval_license needs to be TRUE to UNPACK the compressed predicate
                         # do unpacking
-                        self.memory, made_RBs, hoSemCount = unpacking_routine(self.memory, made_RBs, currentPO, self.gamma, self.tokenize)
+                        self.memory, made_RBs, hoSemCount = unpacking_routine(
+                            self.memory, made_RBs, currentPO, self.gamma, self.tokenize
+                        )
                         # fire the local_inhibitor if necessary.
                         self.time_step_fire_local_inhibitor()
                         # update GUI.
@@ -963,7 +1233,10 @@ class runDORA(object):
                     # print(made_RBs)
 
                 # construct the rest of the proposition with the rest of the predicates and objects from the same analog as the predicates to unpack
-                other_POs, other_RBs = [], [] # lists to store those that were NOT used during unpacking
+                other_POs, other_RBs = (
+                    [],
+                    [],
+                )  # lists to store those that were NOT used during unpacking
                 for myPO in current_pred_analog.myPOs:
                     if myPO not in firingOrder:
                         other_POs.append(myPO)
@@ -980,8 +1253,8 @@ class runDORA(object):
             if not self.tokenize:
                 # put all items in newSet in a new analog
                 self.memory = newSet_items_to_analog(self.memory)
-            else: # if self.tokenize
-                for p in self.memory.newSet.Ps: # how many analogs we need - one per proposition
+            else:  # if self.tokenize
+                for p in self.memory.newSet.Ps:  # how many analogs we need - one per proposition
                     # create an analog
                     new_analog = dataTypes.Analog()
                     self.memory.analogs.append(new_analog)
@@ -1012,7 +1285,7 @@ class runDORA(object):
             # remove current_pred_analog as well
             self.memory.analogs.remove(current_pred_analog)
         else:
-            print('There are no predicates in the memory that could be unpacked')
+            print("There are no predicates in the memory that could be unpacked")
 
         # reset inferences (i.e., reset .inferred, .my_maker_unit, and .my_made_unit fields from all the newSet and recipient units).
         self.memory = reset_inferences(self.memory)
@@ -1029,7 +1302,13 @@ class runDORA(object):
     ######################################
     # functions implementing operations performed during a single time-step in DORA.
     # function to perform basic network activation update for a time_step in the phase set.
-    def time_step_activations(self, phase_set, ignore_object_semantics=False, ignore_memory_semantics=False, retrieval_license=False): # ekaterina: added retrieval_license
+    def time_step_activations(
+        self,
+        phase_set,
+        ignore_object_semantics=False,
+        ignore_memory_semantics=False,
+        retrieval_license=False,
+    ):  # ekaterina: added retrieval_license
         # initialize the input to all tokens and semantic units.
         self.memory = initialize_input(self.memory)
         # 4.3.2) Update modes of all P units in the driver and the recipient.
@@ -1040,7 +1319,7 @@ class runDORA(object):
                 myP.get_Pmode()
         # 4.3.3) Update input to driver token units.
         self.memory = update_driver_inputs(self.memory, self.asDORA, self.lateral_input_level)
-        #print("I've just updated the input to all driver units...")
+        # print("I've just updated the input to all driver units...")
         # 4.3.4-5) Update input to and activation of PO and RB inhibitors.
         for myRB in self.memory.driver.RBs:
             myRB.update_inhibitor_input()
@@ -1052,7 +1331,7 @@ class runDORA(object):
                 myPO.update_inhibitor_act()
         for myRB in self.memory.recipient.RBs:
             myRB.update_inhibitor_input()
-            #RB.update_inhibitor_act()
+            # RB.update_inhibitor_act()
         for myPO in self.memory.recipient.POs:
             myPO.update_inhibitor_input()
             if self.asDORA:
@@ -1063,18 +1342,36 @@ class runDORA(object):
         # 4.3.8) Update input to semantic units.
         for semantic in self.memory.semantics:
             # ignore input to semantic units from POs in object mode if ignore_object_semantics==True (i.e., if DORA is focusing on relational properties (from Hummel & Holyoak, 2003)).
-            semantic.update_input(self.memory, self.ho_sem_act_flow, retrieval_license, ignore_object_semantics, ignore_memory_semantics)
+            semantic.update_input(
+                self.memory,
+                self.ho_sem_act_flow,
+                retrieval_license,
+                ignore_object_semantics,
+                ignore_memory_semantics,
+            )
         # 4.3.9) Update input to all tokens in the recipient and emerging recipient (i.e., newSet).
-        self.memory = update_recipient_inputs(self.memory, self.asDORA, phase_set, self.lateral_input_level, self.ignore_object_semantics)
+        self.memory = update_recipient_inputs(
+            self.memory,
+            self.asDORA,
+            phase_set,
+            self.lateral_input_level,
+            self.ignore_object_semantics,
+        )
         self.memory = update_newSet_inputs(self.memory)
-        #print("I've just updated the input to all recipient units...")
-        #DORA_GUI.full_term_state_display(self.memory)
+        # print("I've just updated the input to all recipient units...")
+        # DORA_GUI.full_term_state_display(self.memory)
         # 4.3.10) Update activations of all units in the driver, recipient, and newSet, and all semanticss.
-        self.memory = update_activations_run(self.memory, self.gamma, self.delta, self.HebbBias, phase_set)
+        self.memory = update_activations_run(
+            self.memory, self.gamma, self.delta, self.HebbBias, phase_set
+        )
 
     # function to fire the local inhibitor if necessary.
     def time_step_fire_local_inhibitor(self):
-        if self.asDORA and self.memory.localInhibitor.act >= 0.99 and not self.local_inhibitor_fired:
+        if (
+            self.asDORA
+            and self.memory.localInhibitor.act >= 0.99
+            and not self.local_inhibitor_fired
+        ):
             self.memory = self.memory.localInhibitor.fire_local_inhibitor(self.memory)
             self.local_inhibitor_fired = True
 
@@ -1085,7 +1382,7 @@ class runDORA(object):
             debug = False
             pause = False
             for event in pygame.event.get():
-                if not hasattr(event,'key'):
+                if not hasattr(event, "key"):
                     continue
                 elif event.key == K_p and event.type == KEYDOWN:
                     # graphics are paused, wait for unpause.
@@ -1110,7 +1407,9 @@ class runDORA(object):
             # check for update GUI.
             if phase_set_iterator % self.GUI_update_rate == 0:
                 # update_GUI.
-                self.screen, self.memory = DORA_GUI.run_GUI(self.screen, self.GUI_information, self.memory, False)
+                self.screen, self.memory = DORA_GUI.run_GUI(
+                    self.screen, self.GUI_information, self.memory, False
+                )
 
     ####################################################
     #    DORA POST COUNT_BY AND PHASE_SET FUNCTIONS    #
@@ -1132,7 +1431,9 @@ class runDORA(object):
     def post_phase_set_operations(self, retrieval_license, map_license, inferred_new_P=False):
         # if you were doing retrieval (i.e., if retrieval_license is True), then use the Luce choice axiom here to retrieve items from memorySet into the recipient.
         if retrieval_license:
-            self.memory = retrieve_tokens(self.memory, self.bias_retrieval_analogs, self.use_relative_act)
+            self.memory = retrieve_tokens(
+                self.memory, self.bias_retrieval_analogs, self.use_relative_act
+            )
         # reset the mode of all P units in the recipient back to neutral (i.e., 0);
         for myP in self.memory.recipient.Ps:
             myP.initialize_Pmode()
@@ -1141,15 +1442,17 @@ class runDORA(object):
         # if you made a new P during relation formation, name it with the name of all its RBs.
         if inferred_new_P:
             # the new P is the last P in memory.Ps. Name it.
-            name_string = ''
+            name_string = ""
             # NOTE: I've added a try/except here because I got an odd error once that I've been unable to recreate. I'm leaving it here just in case it pops up again.
             try:
                 len(self.memory.Ps[-1].myRBs)
             except:
-                print('\nHey, you got a an error awhile ago that you were unable to reproduce. Basically, it seems you learned a P unit with no RBs (or something to that effect). You added a try/except to catch it in case it popped up again. It has. You will want to look very carefully at what happened with the latest P unit that has been made.\n')
+                print(
+                    "\nHey, you got a an error awhile ago that you were unable to reproduce. Basically, it seems you learned a P unit with no RBs (or something to that effect). You added a try/except to catch it in case it popped up again. It has. You will want to look very carefully at what happened with the latest P unit that has been made.\n"
+                )
                 pdb.set_trace()
             for myRB in self.memory.Ps[-1].myRBs:
-                name_string = name_string+'+'+myRB.name
+                name_string = name_string + "+" + myRB.name
             self.memory.Ps[-1].name = name_string
         # remove all links between POs and semantics that are below threshold (=0.01), and round up any connections that are above 0.999.
         self.memory = del_small_link(self.memory, 0.1)
@@ -1163,7 +1466,7 @@ class runDORA(object):
             # reset hypotheses back to 0.0
             self.memory = reset_mappingHyps(self.memory)
         # recalibrate PO weights.
-        #self.memory = calibrate_weight(self.memory)
+        # self.memory = calibrate_weight(self.memory)
 
     # the kludgy comparitor function that runs after the phase set.
     def do_kludge_comparitor(self):
@@ -1176,19 +1479,19 @@ class runDORA(object):
             for PO1 in self.memory.driver.POs:
                 if PO1.predOrObj == 1:
                     PO1.get_index(self.memory)
-                    for PO2 in self.memory.driver.POs[PO1.my_index+1::]:
+                    for PO2 in self.memory.driver.POs[PO1.my_index + 1 : :]:
                         if PO2.predOrObj == 1:
                             for RB1 in PO1.myRBs:
                                 break_flag = False
                                 for RB2 in PO2.myRBs:
-                                    if (len(RB1.myParentPs) == 0) and(len(RB2.myParentPs) == 0):
+                                    if (len(RB1.myParentPs) == 0) and (len(RB2.myParentPs) == 0):
                                         # both POs are connected to RBs with no Ps, so comparitor them.
-                                        driver_pred_pairs.append([PO1,PO2])
+                                        driver_pred_pairs.append([PO1, PO2])
                                         break_flag = True
                                         break
                                     elif RB1.myParentPs[0] is RB2.myParentPs[0]:
                                         # the two POs share a P unit, so comparitor them.
-                                        driver_pred_pairs.append([PO1,PO2])
+                                        driver_pred_pairs.append([PO1, PO2])
                                         break_flag = True
                                         break
                                 if break_flag:
@@ -1198,19 +1501,19 @@ class runDORA(object):
             for PO1 in self.memory.recipient.POs:
                 if PO1.predOrObj == 1:
                     PO1.get_index(self.memory)
-                    for PO2 in self.memory.recipient.POs[PO1.my_index+1::]:
+                    for PO2 in self.memory.recipient.POs[PO1.my_index + 1 : :]:
                         if PO2.predOrObj == 1:
                             for RB1 in PO1.myRBs:
                                 break_flag = False
                                 for RB2 in PO2.myRBs:
                                     if RB1.myParentPs[0] is RB2.myParentPs[0]:
                                         # the two POs share a P unit, so comparitor them.
-                                        recipient_pred_pairs.append([PO1,PO2])
+                                        recipient_pred_pairs.append([PO1, PO2])
                                         break_flag = True
                                         break
-                                    elif (len(RB1.myParentPs) == 0) and(len(RB2.myParentPs) == 0):
+                                    elif (len(RB1.myParentPs) == 0) and (len(RB2.myParentPs) == 0):
                                         # both POs are connected to RBs with no Ps, so comparitor them.
-                                        recipient_pred_pairs.append([PO1,PO2])
+                                        recipient_pred_pairs.append([PO1, PO2])
                                         break_flag = True
                                         break
                                 if break_flag:
@@ -1260,11 +1563,13 @@ class runDORA(object):
                 # and now delete the old analog from self.memory.analogs.
                 analog_index = self.memory.analogs.index(analog)
                 self.memory.analogs.pop(analog_index)
-                del(analog)
+                del analog
             # ekaterina: newly created analog needs to be added to the memory
             self.memory.analogs.append(new_analog)
 
+
 ######################################################################
+
 
 #######################################
 ######### CORE DORA FUNCTIONS #########
@@ -1275,19 +1580,19 @@ def make_AM(memory):
     # for each token, if it is in an AM set (driver, recipient), then make sure all sub-tokens are also in that set. Make sure that all tokens from the same analog are in the same set or in memory (i.e., tokens from the same analog CANNOT be in different AM sets). run findDriverRecipient().
     # for each token unit, make sure all subtokens are in the same set. Also, make sure that if a token is to enter recipient, that it checks to make sure none of it's subtokens are in the driver, and, if they are, that it remains in memory.
     for Group in memory.Groups:
-        if Group.set != 'memory':
+        if Group.set != "memory":
             # make sure all subtokens are in the same set.
             Group = set_sub_tokens(Group)
     for myP in memory.Ps:
-        if myP.set != 'memory':
+        if myP.set != "memory":
             # make sure all subtokens are in the same set.
             myP = set_sub_tokens(myP)
     for myRB in memory.RBs:
-        if myRB.set != 'memory':
+        if myRB.set != "memory":
             # make sure all subtokens are in the same set.
             myRB = set_sub_tokens(myRB)
     for myPO in memory.POs:
-        if myPO.set != 'memory':
+        if myPO.set != "memory":
             # make sure all subtokens are in the same set.
             myPO = set_sub_tokens(myPO)
     # and bring all the copied items from memory into AM (i.e., into driver/recipient).
@@ -1295,14 +1600,15 @@ def make_AM(memory):
     # returns.
     return memory
 
+
 # function to make sure all sub-tokens of a token to enter AM are in the same set. Function also checks that any item to enter the recipient, does not have driver sub-tokens.
 def set_sub_tokens(token):
     # check what kind of token you're dealing with.
-    if token.my_type == 'Group':
+    if token.my_type == "Group":
         # if you're dealing with a Group, then for each of it's sub-groups, sub-Ps, and sub-RBs, set that sub_token.set to the same set as the Group, and run set_sub_tokens on that sub-token.
         # check to make sure that if the Group is in the recipient, none of it's subtokens are in the driver.
         go_on = True
-        if token.set == 'recipient':
+        if token.set == "recipient":
             go_on = check_sub_tokens(token)
         if go_on:
             for Group_under in token.myChildGroups:
@@ -1316,12 +1622,12 @@ def set_sub_tokens(token):
                 myRB = set_sub_tokens(myRB)
         else:
             # set the token.set to 'memory'.
-            token.set = 'memory'
-    elif token.my_type == 'P':
+            token.set = "memory"
+    elif token.my_type == "P":
         # if you're dealing with a P, then for each of it's RBs, set that myRB.set to the same set as the P, and run set_sub_tokens on the myRB.
         # check to make sure that if the P is in the recipient, none of it's subtokens are in the driver.
         go_on = True
-        if token.set == 'recipient':
+        if token.set == "recipient":
             go_on = check_sub_tokens(token)
         if go_on:
             for myRB in token.myRBs:
@@ -1329,12 +1635,12 @@ def set_sub_tokens(token):
                 myRB = set_sub_tokens(myRB)
         else:
             # set the token.set to 'memory'.
-            token.set = 'memory'
-    elif token.my_type == 'RB':
+            token.set = "memory"
+    elif token.my_type == "RB":
         # if you're dealing with a RB, then for each of it's child-Ps and POs, set that token.set to the same set as the RB, and run set_sub_tokens on the the sub-token.
         # check to make sure that if the RB is in the recipient, none of it's subtokens are in the driver.
         go_on = True
-        if token.set == 'recipient':
+        if token.set == "recipient":
             go_on = check_sub_tokens(token)
         if go_on:
             if len(token.myPred) > 0:
@@ -1348,23 +1654,24 @@ def set_sub_tokens(token):
                 token.myChildP[0] = set_sub_tokens(token.myChildP[0])
         else:
             # set the token.set to 'memory'.
-            token.set = 'memory'
+            token.set = "memory"
     # returns.
     return token
+
 
 # function to check all sub-tokens of a token bound for the recipient, to make sure that none are in the driver.
 def check_sub_tokens(token):
     # set the go_on_flag to True (indicating that that there are no driver sub-tokens of a recipient super-token).
     go_on_flag = True
     # make sure you're dealing with a recipient token (this is a redundent check, but is here for safety).
-    if token.set == 'recipient':
+    if token.set == "recipient":
         # make sure all sub-tokens are NOT in the driver.
-        if token.my_type == 'Group':
+        if token.my_type == "Group":
             # make sure none of my sub-groups (or their sub-tokens) are in the driver.
             for sub_group in token.myGroups:
-                if sub_group.set == 'driver':
+                if sub_group.set == "driver":
                     # set token.set to 'memory', go_on_flag to False, and break the loop.
-                    token.set = 'memory'
+                    token.set = "memory"
                     go_on_flag = False
                     break
                 else:
@@ -1372,13 +1679,13 @@ def check_sub_tokens(token):
                     go_on_flag = check_sub_tokens(sub_group)
                     # if go_on_flag is now False (i.e., the token has sub-tokens in the driver), token.set should be set to 'memory' (as it should not be retrieved into the recipient).
                     if not go_on_flag:
-                        token.set = 'memory'
+                        token.set = "memory"
             # if go_on_flag is still True, make sure none of my Ps (or their sub-tokens) are in the driver.
             if go_on_flag:
                 for myP in token.myPs:
-                    if myP.set == 'driver':
+                    if myP.set == "driver":
                         # set token.set to 'memory', go_on_flag to False, and break the loop.
-                        token.set = 'memory'
+                        token.set = "memory"
                         go_on_flag = False
                         break
                     else:
@@ -1386,13 +1693,13 @@ def check_sub_tokens(token):
                         go_on_flag = check_sub_tokens(myP)
                         # if go_on_flag is now False (i.e., the token has sub-tokens in the driver), token.set should be set to 'memory' (as it should not be retrieved into the recipient).
                         if not go_on_flag:
-                            token.set = 'memory'
+                            token.set = "memory"
             # if go_on_flag is still True, make sure none of my RBs (or their sub-tokens) are in the driver.
             if go_on_flag:
                 for myRB in token.myRBs:
-                    if myRB.set == 'driver':
+                    if myRB.set == "driver":
                         # set token.set to 'memory', go_on_flag to False, and break the loop.
-                        token.set = 'memory'
+                        token.set = "memory"
                         go_on_flag = False
                         break
                     else:
@@ -1400,13 +1707,13 @@ def check_sub_tokens(token):
                         go_on_flag = check_sub_tokens(myRB)
                         # if go_on_flag is now False (i.e., the token has sub-tokens in the driver), token.set should be set to 'memory' (as it should not be retrieved into the recipient).
                         if not go_on_flag:
-                            token.set = 'memory'
-        elif token.my_type == 'P':
+                            token.set = "memory"
+        elif token.my_type == "P":
             # make sure none of my RBs (or their sub-tokens) are in the driver.
             for myRB in token.myRBs:
-                if myRB.set == 'driver':
+                if myRB.set == "driver":
                     # set token.set to 'memory', go_on_flag to False, and break the loop.
-                    token.set = 'memory'
+                    token.set = "memory"
                     go_on_flag = False
                     break
                 else:
@@ -1414,21 +1721,22 @@ def check_sub_tokens(token):
                     go_on_flag = check_sub_tokens(myRB)
                     # if go_on_flag is now False (i.e., the token has sub-tokens in the driver), token.set should be set to 'memory' (as it should not be retrieved into the recipient).
                     if not go_on_flag:
-                        token.set = 'memory'
-        elif token.my_type == 'RB':
+                        token.set = "memory"
+        elif token.my_type == "RB":
             # make sure none of my POs are in the driver.
-            if token.myPred[0].set == 'driver':
+            if token.myPred[0].set == "driver":
                 # set token.set to 'memory' and go_on_flag to False.
-                token.set = 'memory'
+                token.set = "memory"
                 go_on_flag = False
             # make sure you only check the objs of RBs not taking a child P as an argument.
             if len(token.myObj) > 0:
-                if token.myObj[0].set == 'driver':
+                if token.myObj[0].set == "driver":
                     # set token.set to 'memory' and go_on_flag to False.
-                    token.set = 'memory'
+                    token.set = "memory"
                     go_on_flag = False
     # returns.
     return go_on_flag
+
 
 # function to make copies of items from memory to enter AM.
 def make_AM_copy(memory):
@@ -1447,6 +1755,7 @@ def make_AM_copy(memory):
     # returns.
     return memory
 
+
 # function to check an analog for whether it contains any tokens to copy.
 def check_analog_for_tokens_to_copy(analog):
     # check if analog is to be copied. Go through all tokens in the analog and see whether the .set field of any is NOT 'memory'. If it is not, break the loop and copy the analog to analogs_to_copy.
@@ -1454,33 +1763,34 @@ def check_analog_for_tokens_to_copy(analog):
     # first check all the Groups.
     if not copy_analog_flag:
         for Group in analog.myGroups:
-            if Group.set != 'memory':
+            if Group.set != "memory":
                 # set copy_analog_flag to True and break the loop.
                 copy_analog_flag = True
                 break
     # if copy_analog_flag is still False, check the Ps.
     if not copy_analog_flag:
         for myP in analog.myPs:
-            if myP.set != 'memory':
+            if myP.set != "memory":
                 # set copy_analog_flag to True and break the loop.
                 copy_analog_flag = True
                 break
     # if copy_analog_flag is still False, check the RBs.
     if not copy_analog_flag:
         for myRB in analog.myRBs:
-            if myRB.set != 'memory':
+            if myRB.set != "memory":
                 # set copy_analog_flag to True and break the loop.
                 copy_analog_flag = True
                 break
     # if copy_analog_flag is still False, check the POs.
     if not copy_analog_flag:
         for myPO in analog.myPOs:
-            if myPO.set != 'memory':
+            if myPO.set != "memory":
                 # set copy_analog_flag to True and break the loop.
                 copy_analog_flag = True
                 break
     # return copy_analog_flag
     return copy_analog_flag
+
 
 # function to copy a to be retrieved analog and it's elements into AM.
 def copy_analog(analog, memory):
@@ -1498,6 +1808,7 @@ def copy_analog(analog, memory):
     memory.analogs.append(new_analog)
     # returns.
     return memory
+
 
 # function to make all tokens from the to be copied analog.
 def copy_analog_tokens(analog, new_analog, memory):
@@ -1531,7 +1842,9 @@ def copy_analog_tokens(analog, new_analog, memory):
             # if the PO does not already exist in the new_analog, then make it.
             if make_new_PO:
                 # make the RB's pred.
-                copy_pred = dataTypes.POUnit(myRB.myPred[0].name, myRB.myPred[0].set, new_analog, False, new_analog, 1)
+                copy_pred = dataTypes.POUnit(
+                    myRB.myPred[0].name, myRB.myPred[0].set, new_analog, False, new_analog, 1
+                )
                 # put the copy_pred in new_analog and in memory.
                 new_analog.myPOs.append(copy_pred)
                 memory.POs.append(copy_pred)
@@ -1559,7 +1872,9 @@ def copy_analog_tokens(analog, new_analog, memory):
             # if the PO does not already exist in the new_analog, then make it.
             if make_new_PO:
                 # make the RB's object.
-                copy_obj = dataTypes.POUnit(myRB.myObj[0].name, myRB.myObj[0].set, new_analog, False, new_analog, 0)
+                copy_obj = dataTypes.POUnit(
+                    myRB.myObj[0].name, myRB.myObj[0].set, new_analog, False, new_analog, 0
+                )
                 # put the copy_obj in new_analog and in memory.
                 new_analog.myPOs.append(copy_obj)
                 memory.POs.append(copy_obj)
@@ -1595,7 +1910,9 @@ def copy_analog_tokens(analog, new_analog, memory):
             # if the PO does not already exist in the new_analog, then make it.
             if make_new_PO:
                 # make the RB's pred.
-                copy_pred = dataTypes.POUnit(myRB.myPred[0].name, myRB.myPred[0].set, new_analog, False, new_analog, 1)
+                copy_pred = dataTypes.POUnit(
+                    myRB.myPred[0].name, myRB.myPred[0].set, new_analog, False, new_analog, 1
+                )
                 # put the copy_pred in new_analog and memory.
                 new_analog.myPOs.append(copy_pred)
                 memory.POs.append(copy_pred)
@@ -1623,7 +1940,9 @@ def copy_analog_tokens(analog, new_analog, memory):
             # if the PO does not already exist in the new_analog, then make it.
             if make_new_PO:
                 # make the RB's object.
-                copy_obj = dataTypes.POUnit(myRB.myObj[0].name, myRB.myObj[0].set, new_analog, False, new_analog, 0)
+                copy_obj = dataTypes.POUnit(
+                    myRB.myObj[0].name, myRB.myObj[0].set, new_analog, False, new_analog, 0
+                )
                 # put the copy_obj in new_analog and memory.
                 new_analog.myPOs.append(copy_obj)
                 memory.POs.append(copy_obj)
@@ -1665,41 +1984,44 @@ def copy_analog_tokens(analog, new_analog, memory):
     # returns.
     return new_analog, memory
 
+
 # function to clear .set field for all tokens in an analog.
 def clear_set(analog):
     for Group in analog.myGroups:
-        Group.set = 'memory'
+        Group.set = "memory"
     for myP in analog.myPs:
-        myP.set = 'memory'
+        myP.set = "memory"
     for myRB in analog.myRBs:
-        myRB.set = 'memory'
+        myRB.set = "memory"
     for myPO in analog.myPOs:
-        myPO.set = 'memory'
+        myPO.set = "memory"
     # returns.
     return analog
+
 
 # function to make sure all lower tokens of a to be retrieved into AM token in an analog are also set to be retrieved.
 def retrieve_all_relevant_tokens(analog):
     # check each token, and if it is to be retrieved into AM (i.e., .set is NOT 'memory), make sure all tokens below it are also be be retrieved into AM.
     for Group in analog.myGroups:
-        if Group.set != 'memory':
+        if Group.set != "memory":
             Group = retrieve_lower_tokens(Group)
     for myP in analog.myPs:
-        if myP.set != 'memory':
+        if myP.set != "memory":
             myP = retrieve_lower_tokens(myP)
     for myRB in analog.myRBs:
-        if myRB.set != 'memory':
+        if myRB.set != "memory":
             myRB = retrieve_lower_tokens(myRB)
     for myPO in analog.myPOs:
-        if myPO.set != 'memory':
+        if myPO.set != "memory":
             myPO = retrieve_lower_tokens(myPO)
     # returns.
     return analog
 
+
 # function to make sure all a token's sub-tokens are in the proper .set
 def retrieve_lower_tokens(token):
     # check what kind of token you're dealing with.
-    if token.my_type == 'Group':
+    if token.my_type == "Group":
         # if you're dealing with a Group, then for each of it's sub-groups, sub-Ps, and sub-RBs, set that sub_token.set to the same set as the Group, and run retrieve_lower_tokens on that sub-token.
         for Group_under in token.myChildGroups:
             Group_under.set = token.set
@@ -1710,12 +2032,12 @@ def retrieve_lower_tokens(token):
         for myRB in token.myRBs:
             myRB.set = token.set
             myRB = retrieve_lower_tokens(myRB)
-    if token.my_type == 'P':
+    if token.my_type == "P":
         # if you're dealing with a P, then for each of it's RBs, set that myRB.set to the same set as the P, and run retrieve_lower_tokens on the myRB.
         for myRB in token.myRBs:
             myRB.set = token.set
             myRB = retrieve_lower_tokens(myRB)
-    if token.my_type == 'RB':
+    if token.my_type == "RB":
         # if you're dealing with a RB, then for each of it's child-Ps and POs, set that token.set to the same set as the RB, and run retrieve_lower_tokens on the the sub-token.
         token.myPred[0].set = token.set
         token.myPred[0] = retrieve_lower_tokens(token.myPred[0])
@@ -1728,28 +2050,30 @@ def retrieve_lower_tokens(token):
     # returns.
     return token
 
+
 # function to delete unretrieved tokens from a copied analog.
 def delete_unretrieved_tokens(analog):
     # go through each token in the analog. If it is unretrieved (i.e., token.set == 'memory'), delete that token and make sure you also delete that token from any tokens to which is is connected. NOTE: You don't need to worry about connections between POs and semantics, as the semantics copied POs are connected to are themselves copied and it doesn't matter if they are deleted. You'll replace these copied semantics with the original semantics using replace_copied_semantics() later in the check_analog_for_tokens_to_copy() function.
     for Group in analog.myGroups:
-        if Group.set == 'memory':
+        if Group.set == "memory":
             analog = delete_token(Group, analog)
     for myP in analog.myPs:
-        if myP.set == 'memory':
+        if myP.set == "memory":
             analog = delete_token(myP, analog)
     for myRB in analog.myRBs:
-        if myRB.set == 'memory':
+        if myRB.set == "memory":
             analog = delete_token(myRB, analog)
     for myPO in analog.myPOs:
-        if myPO.set == 'memory':
+        if myPO.set == "memory":
             analog = delete_token(myPO, analog)
     # returns.
     return analog
 
+
 # function to delete a token from an analog.
 def delete_token(token, analog):
     # figure out what kind of unit token is, then delete the token and delete instances of that token from any units it is connected to.
-    if token.my_type == 'Group':
+    if token.my_type == "Group":
         # delete the Group from its ParentGroups, ChildGroups, Ps, and RBs.
         for pGroup in token.myParentGroups:
             pGroup.myChildGroups.remove(token)
@@ -1762,7 +2086,7 @@ def delete_token(token, analog):
         # delete the Group iteself from analog.
         # NOTE: You don't need to delete the analog from memory, because you haven't added the analog to memory yet. It is still just a copied analog
         analog.myGroups.remove(token)
-    elif token.my_type == 'P':
+    elif token.my_type == "P":
         # delete the P from its Groups, ParentRBs, and ChildRBs.
         for Group in token.myGroups:
             Group.myPs.remove(token)
@@ -1772,7 +2096,7 @@ def delete_token(token, analog):
             ChildRB.myParentPs.remove(token)
         # delete the P iteself.
         analog.myPs.remove(token)
-    elif token.my_type == 'RB':
+    elif token.my_type == "RB":
         # delete the RB from its ParentPs, Pred, and either ChildP or Object.
         for ParentP in token.myParentPs:
             ParentP.myRBs.remove(token)
@@ -1790,7 +2114,7 @@ def delete_token(token, analog):
             obj.myRBs.remove(token)
         # delete the RB iteself.
         analog.myRBs.remove(token)
-    elif token.my_type == 'PO':
+    elif token.my_type == "PO":
         # delete the PO from its RBs.
         for myRB in token.myRBs:
             if token.predOrObj == 1:
@@ -1802,6 +2126,7 @@ def delete_token(token, analog):
     # returns.
     return analog
 
+
 # function to replace semantics in a new PO with the original memory.semantics versions.
 def replace_copied_semantics(myPO, semantics):
     # for each Link in my .mySemantics, find the original semantic with the same name as .mySemantic.name, and replace .mySemantic with the original semantic from memory.
@@ -1811,25 +2136,38 @@ def replace_copied_semantics(myPO, semantics):
             if semantic.name == Link.mySemantic.name:
                 Link.mySemantic = semantic
                 semantic.myPOs.append(Link)
-                break # break the for loop.
+                break  # break the for loop.
     # returns.
     return myPO, semantics
+
 
 # function to find token in memory whose set is driver or recipient in order to construct the driver and recipient sets for the run. Returns driver and recipient sets.
 def findDriverRecipient(memory):
     # first clear out the memory.driver and memory.recipient fields.
-    memory.driver.Groups, memory.driver.Ps, memory.driver.RBs, memory.driver.POs, memory.driver.analogs = [], [], [], [], []
-    memory.recipient.Groups, memory.recipient.Ps, memory.recipient.RBs, memory.recipient.POs, memory.recipient.analogs = [], [], [], [], []
+    (
+        memory.driver.Groups,
+        memory.driver.Ps,
+        memory.driver.RBs,
+        memory.driver.POs,
+        memory.driver.analogs,
+    ) = ([], [], [], [], [])
+    (
+        memory.recipient.Groups,
+        memory.recipient.Ps,
+        memory.recipient.RBs,
+        memory.recipient.POs,
+        memory.recipient.analogs,
+    ) = ([], [], [], [], [])
     # for each Group, P, RB, and PO, if the set is driver, put in in the driverSet, otherwise, elif the set is recipient, put it in the recipientSet.
     for Group in memory.Groups:
-        if Group.set == 'driver':
+        if Group.set == "driver":
             memory.driver.Groups.append(Group)
             # reset the .copy_for_DR field back to False.
             Group.copy_for_DR = False
             # now add the analog to driver.analogs if it is not already there.
             if Group.myanalog not in memory.driver.analogs:
                 memory.driver.analogs.append(Group.myanalog)
-        elif Group.set == 'recipient':
+        elif Group.set == "recipient":
             memory.recipient.Groups.append(Group)
             # reset the .copy_for_DR field back to False.
             Group.copy_for_DR = False
@@ -1837,14 +2175,14 @@ def findDriverRecipient(memory):
             if Group.myanalog not in memory.recipient.analogs:
                 memory.recipient.analogs.append(Group.myanalog)
     for myP in memory.Ps:
-        if myP.set == 'driver':
+        if myP.set == "driver":
             memory.driver.Ps.append(myP)
             # reset the .copy_for_DR field back to False.
             myP.copy_for_DR = False
             # now add the analog to driver.analogs if it is not already there.
             if myP.myanalog not in memory.driver.analogs:
                 memory.driver.analogs.append(myP.myanalog)
-        elif myP.set == 'recipient':
+        elif myP.set == "recipient":
             memory.recipient.Ps.append(myP)
             # reset the .copy_for_DR field back to False.
             myP.copy_for_DR = False
@@ -1852,14 +2190,14 @@ def findDriverRecipient(memory):
             if myP.myanalog not in memory.recipient.analogs:
                 memory.recipient.analogs.append(myP.myanalog)
     for myRB in memory.RBs:
-        if myRB.set == 'driver':
+        if myRB.set == "driver":
             memory.driver.RBs.append(myRB)
             # reset the .copy_for_DR field back to False.
             myRB.copy_for_DR = False
             # now add the analog to driver.analogs if it is not already there.
             if myRB.myanalog not in memory.driver.analogs:
                 memory.driver.analogs.append(myRB.myanalog)
-        elif myRB.set == 'recipient':
+        elif myRB.set == "recipient":
             memory.recipient.RBs.append(myRB)
             # reset the .copy_for_DR field back to False.
             myRB.copy_for_DR = False
@@ -1867,12 +2205,12 @@ def findDriverRecipient(memory):
             if myRB.myanalog not in memory.recipient.analogs:
                 memory.recipient.analogs.append(myRB.myanalog)
     for myPO in memory.POs:
-        if myPO.set == 'driver':
+        if myPO.set == "driver":
             memory.driver.POs.append(myPO)
             # now add the analog to driver.analogs if it is not already there.
             if myPO.myanalog not in memory.driver.analogs:
                 memory.driver.analogs.append(myPO.myanalog)
-        elif myPO.set == 'recipient':
+        elif myPO.set == "recipient":
             memory.recipient.POs.append(myPO)
             # now add the analog to recipient.analogs if it is not already there.
             if myPO.myanalog not in memory.recipient.analogs:
@@ -1880,12 +2218,13 @@ def findDriverRecipient(memory):
     # returns.
     return memory
 
+
 # make firing order.
 def makeFiringOrder(memory, rule):
     # set the firing order of the driver using rule.
     # right now, the only rule is random, the default.
     # you should add pragmatics.
-    if rule == 'by_top_random':
+    if rule == "by_top_random":
         # arrange RBs randomly within Ps or Groups.
         if len(memory.driver.Groups) > 0:
             # arrange by Groups.
@@ -1904,7 +2243,7 @@ def makeFiringOrder(memory, rule):
                 for myRB in myP.myRBs:
                     # add RB to firingOrder.
                     firingOrder.append(myRB)
-        elif len(memory.driver.Ps) > 0: # arrange by Ps.
+        elif len(memory.driver.Ps) > 0:  # arrange by Ps.
             # randomly arrange the Ps.
             Porder = memory.driver.Ps
             random.shuffle(Porder)
@@ -1926,7 +2265,7 @@ def makeFiringOrder(memory, rule):
                 for myPO in memory.driver.POs:
                     firingOrder.append(myPO)
                 random.shuffle(firingOrder)
-    else: # use a totally random firing order.
+    else:  # use a totally random firing order.
         # if not rule == 'totally_random':
         #     print ('\nYou have not input a valid firing rule. I am arranging RBs at random.\n') # ekaterina
         firingOrder = []
@@ -1942,6 +2281,7 @@ def makeFiringOrder(memory, rule):
     # returns.
     return firingOrder
 
+
 # index all items in memory.
 def indexMemory(memory):
     for Group in memory.Groups:
@@ -1954,6 +2294,7 @@ def indexMemory(memory):
         myPO.get_index(memory)
     # returns.
     return memory
+
 
 # update all the .same_RB_POs for all POs in memory.
 def update_same_RB_POs(memory):
@@ -1968,6 +2309,7 @@ def update_same_RB_POs(memory):
             myRB.myPred[0].same_RB_POs.append(myRB.myObj[0])
     # returns.
     return memory
+
 
 # a function to clear activation and input to all driver, recipient, newSet, and semantic units (i.e., everything in active memory, AM).
 def initialize_AM(memory):
@@ -2000,6 +2342,7 @@ def initialize_AM(memory):
     # returns.
     return memory
 
+
 # a function to clear the activation and input to all units in the network.
 def initialize_memorySet(memory):
     for Group in memory.Groups:
@@ -2012,6 +2355,7 @@ def initialize_memorySet(memory):
         myPO.initialize_act()
     # returns.
     return memory
+
 
 # initialize input to all driver, recipient, newSet and semantic units.
 def initialize_input(memory):
@@ -2043,6 +2387,7 @@ def initialize_input(memory):
         semantic.initialize_input(0.0)
     # returns.
     return memory
+
 
 # update the activations of all units in driver, recipient, and newSet.
 def update_activations_run(memory, gamma, delta, HebbBias, phase_set):
@@ -2078,22 +2423,24 @@ def update_activations_run(memory, gamma, delta, HebbBias, phase_set):
     # returns.
     return memory
 
+
 # update the activation of all units in memory that are NOT in driver, recipient, or newSet. (For use in retrieval.)
 def update_acts_memory(memory, gamma, delta, HebbBias):
     for Group in memory.Groups:
-        if Group.set == 'memory':
+        if Group.set == "memory":
             Group.update_act(gamma, delta, HebbBias)
     for myP in memory.Ps:
-        if myP.set == 'memory':
+        if myP.set == "memory":
             myP.update_act(gamma, delta, HebbBias)
     for myRB in memory.RBs:
-        if myRB.set == 'memory':
+        if myRB.set == "memory":
             myRB.update_act(gamma, delta, HebbBias)
     for myPO in memory.POs:
-        if myPO.set == 'memory':
+        if myPO.set == "memory":
             myPO.update_act(gamma, delta, HebbBias)
     # returns.
     return memory
+
 
 # update inputs to driver units.
 def update_driver_inputs(memory, asDORA, lateral_input_level):
@@ -2112,8 +2459,11 @@ def update_driver_inputs(memory, asDORA, lateral_input_level):
     # returns
     return memory
 
+
 # update inputs to recipient units.
-def update_recipient_inputs(memory, asDORA, phase_set, lateral_input_level, ignore_object_semantics):
+def update_recipient_inputs(
+    memory, asDORA, phase_set, lateral_input_level, ignore_object_semantics
+):
     # update inputs to all recipient units.
     for Group in memory.recipient.Groups:
         Group.update_input_driver(memory, asDORA)
@@ -2125,14 +2475,17 @@ def update_recipient_inputs(memory, asDORA, phase_set, lateral_input_level, igno
     for myRB in memory.recipient.RBs:
         myRB.update_input_recipient(memory, asDORA, phase_set, lateral_input_level)
     for myPO in memory.recipient.POs:
-        myPO.update_input_recipient(memory, asDORA, phase_set, lateral_input_level, ignore_object_semantics)
+        myPO.update_input_recipient(
+            memory, asDORA, phase_set, lateral_input_level, ignore_object_semantics
+        )
     # returns.
     return memory
+
 
 # update newSet inputs.
 def update_newSet_inputs(memory):
     # units in NewSet have input 1 if the token that made them in the driver is active above threshold, 0 otherwise.
-    threshold = .75
+    threshold = 0.75
     for Group in memory.newSet.Groups:
         if Group.my_maker_unit.act > threshold:
             Group.act = 1.0
@@ -2158,26 +2511,30 @@ def update_newSet_inputs(memory):
     # returns.
     return memory
 
+
 # update input to all memorySet units that are not in driver, recipient, or newSet (used during retreival).
 def update_memory_inputs(memory, asDORA, lateral_input_level):
     # for all units not in driver, recipient, or newSet (i.e., units with set != driver, recipient, or newSet), update input. Units in memory update as units in recipient.
     # set phase_set to 2.
     phase_set = 2
     for Group in memory.Groups:
-        if Group.set == 'memory':
+        if Group.set == "memory":
             Group.update_input_recipient(memory, asDORA, phase_set, lateral_input_level)
     for myP in memory.Ps:
-        if myP.set == 'memory':
+        if myP.set == "memory":
             # NOTE: I think it might be best to avoid modes altogether when working in retieval mode. This version of the code reflects this assumption.
             myP.update_input_recipient_parent(memory, asDORA, phase_set, lateral_input_level)
     for myRB in memory.RBs:
-        if myRB.set == 'memory':
+        if myRB.set == "memory":
             myRB.update_input_recipient(memory, asDORA, phase_set, lateral_input_level)
     for myPO in memory.POs:
-        if myPO.set == 'memory':
-            myPO.update_input_recipient(memory, asDORA, phase_set, lateral_input_level) # update with phase_set = 2 so that myPO units also take top down input from RBs.
+        if myPO.set == "memory":
+            myPO.update_input_recipient(
+                memory, asDORA, phase_set, lateral_input_level
+            )  # update with phase_set = 2 so that myPO units also take top down input from RBs.
     # returns.
     return memory
+
 
 # get the max input to semantics unit in the network.
 def get_max_sem_input(memory):
@@ -2187,6 +2544,7 @@ def get_max_sem_input(memory):
             max_input = semantic.myinput
     # returns.
     return max_input
+
 
 # function to delete links between semantics and POs that are less than threshold.
 def del_small_link(memory, threshold):
@@ -2199,6 +2557,7 @@ def del_small_link(memory, threshold):
     # returns.
     return memory
 
+
 # function to round up to 1.0 any links between semantics and POs that are above a certain threshold.
 def round_big_link(memory, threshold):
     for link in memory.Links:
@@ -2207,17 +2566,19 @@ def round_big_link(memory, threshold):
     # returns.
     return memory
 
+
 # check if the requirements for entropy based same/different/more/less are met.
 def entropy_samediff_requirements(memory):
     do_entropy_SDML = False
     # make sure that the most active PO in driver and recipient have activation above 0.6 and map to one-another.
-    #PO1 = get_most_active_unit(memory.driver.POs)
-    #PO2 = get_most_active_unit(memory.recipient.POs)
-    #if PO1.act >= 0.6 and PO2.act >= 0.6:
+    # PO1 = get_most_active_unit(memory.driver.POs)
+    # PO2 = get_most_active_unit(memory.recipient.POs)
+    # if PO1.act >= 0.6 and PO2.act >= 0.6:
     #    if PO1.max_map_unit is PO2:
     #        do_entropy_SMDL = True
     # returns.
     return do_entropy_SDML
+
 
 # check if the requirements for predication are met.
 def predication_requirements(memory):
@@ -2228,13 +2589,14 @@ def predication_requirements(memory):
     do_predication = False
     for myPO in memory.driver.POs:
         # make sure that my max_map is at least .8, and the unit to which I map maximally has no RBs.
-        if myPO.max_map > .8 and len(myPO.max_map_unit.myRBs) < 1:
+        if myPO.max_map > 0.8 and len(myPO.max_map_unit.myRBs) < 1:
             do_predication = True
         else:
             do_predication = False
             break
     # returns.
     return do_predication
+
 
 # check if the reqiurements for relation-formation are met.
 def rel_form_requirements(memory):
@@ -2243,7 +2605,7 @@ def rel_form_requirements(memory):
     RBs_meeting_requirements = 0
     for myRB in memory.recipient.RBs:
         for mappingConnection in myRB.mappingConnections:
-            if mappingConnection.weight >= .8:
+            if mappingConnection.weight >= 0.8:
                 if len(mappingConnection.recipientToken.myParentPs) < 1:
                     # increment the RBs_meeting_requirements variable by 1.
                     RBs_meeting_requirements += 1
@@ -2253,6 +2615,7 @@ def rel_form_requirements(memory):
                         break
     # returns.
     return do_rel_form
+
 
 # check if requirements for schema induction are met.
 def schema_requirements(memory):
@@ -2273,12 +2636,12 @@ def schema_requirements(memory):
                 elif myRB.myPred[0].max_map < threshold:
                     do_schematize = False
                     break
-                # check the object if the RB is lower order, or the childP if it's higher order. 
-                elif myRB.myObj: 
+                # check the object if the RB is lower order, or the childP if it's higher order.
+                elif myRB.myObj:
                     if myRB.myObj[0].max_map < threshold:
                         do_schematize = False
                         break
-                elif myRB.myChildP: 
+                elif myRB.myChildP:
                     if myRB.myChildP[0].max_map < threshold:
                         do_schematize = False
                         break
@@ -2322,12 +2685,12 @@ def schema_requirements(memory):
                     elif myRB.myPred[0].max_map < threshold:
                         do_schematize = False
                         break
-                    # check the object if the RB is lower order, or the childP if it's higher order. 
-                    elif myRB.myObj: 
+                    # check the object if the RB is lower order, or the childP if it's higher order.
+                    elif myRB.myObj:
                         if myRB.myObj[0].max_map < threshold:
                             do_schematize = False
                             break
-                    elif myRB.myChildP: 
+                    elif myRB.myChildP:
                         if myRB.myChildP[0].max_map < threshold:
                             do_schematize = False
                             break
@@ -2343,12 +2706,12 @@ def schema_requirements(memory):
                 if myRB.myPred[0].max_map < threshold:
                     do_schematize = False
                     break
-                # check the object if the RB is lower order, or the childP if it's higher order. 
-                elif myRB.myObj: 
+                # check the object if the RB is lower order, or the childP if it's higher order.
+                elif myRB.myObj:
                     if myRB.myObj[0].max_map < threshold:
                         do_schematize = False
                         break
-                elif myRB.myChildP: 
+                elif myRB.myChildP:
                     if myRB.myChildP[0].max_map < threshold:
                         do_schematize = False
                         break
@@ -2363,6 +2726,7 @@ def schema_requirements(memory):
                 break
     # returns.
     return do_schematize
+
 
 # check if requirements for relational generalization are met.
 def rel_gen_requirements(memory):
@@ -2401,6 +2765,7 @@ def rel_gen_requirements(memory):
                 break
     # returns.
     return do_inference
+
 
 # get the max mapping weight for all driver and recipient units.
 def get_max_maps(memory):
@@ -2455,6 +2820,7 @@ def get_max_maps(memory):
     # returns.
     return memory
 
+
 # initialize (i.e., reset to empty) all the mappingHypotheses and mappingConnections.
 def resetMappingUnits(memory):
     # delete all mappingHypothesis and mappingConnection units.
@@ -2488,6 +2854,7 @@ def resetMappingUnits(memory):
     # returns.
     return memory
 
+
 # reset the .mappingHypotheses, .mappingConnections, and .max_map of all tokens.
 def reset_mappings(memory):
     for Group in memory.Groups:
@@ -2512,6 +2879,7 @@ def reset_mappings(memory):
         myPO.max_map_unit = None
     # returns.
     return memory
+
 
 # set up mappingHypotheses and mappingConnection units.
 def setupMappingUnits(memory):
@@ -2572,12 +2940,14 @@ def setupMappingUnits(memory):
     # returns.
     return memory
 
+
 # update the mapping hypotheses.
 def update_mappingHyps(memory):
     for hypothesis in memory.mappingHypotheses:
         hypothesis.update_hyp(memory)
     # returns.
     return memory
+
 
 # reset the values of the mapping hypotheses.
 def reset_mappingHyps(memory):
@@ -2586,6 +2956,7 @@ def reset_mappingHyps(memory):
         hyp.max_hyp = 0.0
     # returns.
     return memory
+
 
 # update mapping connections.
 def update_mappingConnections(memory, eta):
@@ -2602,7 +2973,10 @@ def update_mappingConnections(memory, eta):
     for hypothesis in memory.mappingHypotheses:
         if hypothesis.max_hyp > 0:
             hypothesis.hypothesis /= hypothesis.max_hyp
-    # second step: subractively normalize each hypothesis. For each hypothesis, look at all hypotheses of the driver and recipient unit sharing the hypothesis. Find the largest hypothesis in either the shared driver or recipient that is NOT the hypothesis itself. Subtract by that value.
+    # second step: subractively normalize each hypothesis.
+    # For each hypothesis, look at all hypotheses of the driver and recipient unit
+    # sharing the hypothesis. Find the largest hypothesis in either the shared driver or recipient
+    # that is NOT the hypothesis itself. Subtract by that value.
     for hypothesis in memory.mappingHypotheses:
         hypothesis.max_hyp = 0.0
         max_hyp = 0.0
@@ -2617,7 +2991,9 @@ def update_mappingConnections(memory, eta):
     for hypothesis in memory.mappingHypotheses:
         hypothesis.hypothesis -= hypothesis.max_hyp
         # update the mappingConnections using the corresponding mappingHypothesis.
-        hypothesis.myMappingConnection.weight += (eta*(1.1-hypothesis.myMappingConnection.weight)*hypothesis.hypothesis)
+        hypothesis.myMappingConnection.weight += (
+            eta * (1.1 - hypothesis.myMappingConnection.weight) * hypothesis.hypothesis
+        )
         # and mapping connections are hard limited to between 0 and 1.
         if hypothesis.myMappingConnection.weight > 1:
             hypothesis.myMappingConnection.weight = 1
@@ -2626,9 +3002,11 @@ def update_mappingConnections(memory, eta):
     # returns.
     return memory
 
+
 # update max_map_unit (i.e., the unit I most map to).
 def get_max_map_units(memory):
-    # for each token in driver and recipient, get its hightest mapping connection and place the weight of that connection in .max_map.
+    # for each token in driver and recipient, get its hightest mapping connection and
+    # place the weight of that connection in .max_map.
     for Group in memory.driver.Groups:
         max_map = 0.0
         max_map_unit = None
@@ -2712,72 +3090,87 @@ def get_max_map_units(memory):
     # returns.
     return memory
 
+
 # function to do run the network during retieval.
-def retrieval_routine(memory, asDORA, gamma, delta, HebbBias, lateral_input_level, bias_retrieval_analogs):
+def retrieval_routine(
+    memory, asDORA, gamma, delta, HebbBias, lateral_input_level, bias_retrieval_analogs
+):
     # update input to memorySet units.
     memory = update_memory_inputs(memory, asDORA, lateral_input_level)
     # update activation of memorySet units.
     memory = update_acts_memory(memory, gamma, delta, HebbBias)
     if bias_retrieval_analogs:
-        # for each analog, track the total activation of its units if they are in memory (i.e., if the analog is not already in driver or recipient).
+        # for each analog, track the total activation of its units if they are in memory
+        # (i.e., if the analog is not already in driver or recipient).
         for analog in memory.analogs:
             analog.total_act = 0.0
             for myP in analog.myPs:
-                if myP.set == 'memory':
+                if myP.set == "memory":
                     analog.total_act += myP.act
             for myRB in analog.myRBs:
-                if myRB.set == 'memory':
+                if myRB.set == "memory":
                     analog.total_act += myRB.act
             for myPO in analog.myPOs:
-                if myPO.set == 'memory':
+                if myPO.set == "memory":
                     analog.total_act += myPO.act
             analog.sum_num_units()
     else:
         # track the most active P, RB, and PO units in memory.
         for myP in memory.Ps:
-            if myP.set == 'memory':
+            if myP.set == "memory":
                 if myP.act > myP.max_act:
                     myP.max_act = myP.act
         for myRB in memory.RBs:
-            if myRB.set == 'memory':
+            if myRB.set == "memory":
                 if myRB.act > myRB.max_act:
                     myRB.max_act = myRB.act
         for myPO in memory.POs:
-            if myPO.set == 'memory':
+            if myPO.set == "memory":
                 if myPO.act > myPO.max_act:
                     myPO.max_act = myPO.act
         # returns.
     return memory
 
-# function to retrieve tokens from memory. Takes as arguments the memory set, and a bias_retrieval_analogs flag that if True, biases retrieval towards whole analogs.
+
+# function to retrieve tokens from memory. Takes as arguments the memory set, and a
+# bias_retrieval_analogs flag that if True, biases retrieval towards whole analogs.
 def retrieve_tokens(memory, bias_retrieval_analogs, use_relative_act):
-    # if bias_retrieval_analogs is true, bias towards retrieving whole analogs. Otherwise, default to no bias (myPs, RBs, and POs stand some odds of being retrieved regardless of their interconnectivity (of course, if a token is retrieved, all tokens below it that the token is connected to are also retrieved)).
+    # if bias_retrieval_analogs is true, bias towards retrieving whole analogs.
+    # Otherwise, default to no bias (myPs, RBs, and POs stand some odds of being retrieved
+    # regardless of their interconnectivity (of course, if a token is retrieved,
+    # all tokens below it that the token is connected to are also retrieved)).
     if use_relative_act:
         # retrieve using relative activation of propositions.
         if bias_retrieval_analogs:
-            # retrieve whole analogs. Create a normalised retrieval score for each analog (i.e., analog.total_act/analog.num_units), and make a list of all analog activations.
+            # retrieve whole analogs. Create a normalised retrieval score for each analog
+            # (i.e., analog.total_act/analog.num_units), and make a list of all analog activations.
             analog_activation_list = []
             for analog in memory.analogs:
                 # make sure analog has a .total_act and .num_units > 0.
                 if analog.total_act > 0 and analog.num_units > 0:
                     # calculate analog.normalised_retrieval_act and add that to sum_normalised_analogs.
-                    analog.normalised_retrieval_act = analog.total_act/analog.num_units
+                    analog.normalised_retrieval_act = analog.total_act / analog.num_units
                     analog_activation_list.append(analog.normalised_retrieval_act)
-            # retrieve analogs with a probability calculated as a function of the ratio of the specific analog's normalised activation to the average normalised activation of all active analogs. Find the average and highest normalised activation for analogs.
+            # retrieve analogs with a probability calculated as a function of the ratio of
+            # the specific analog's normalised activation to the average normalised activation of
+            # all active analogs. Find the average and highest normalised activation for analogs.
             avg_analog_norm_act = np.mean(analog_activation_list)
             high_analog_norm_act = max(analog_activation_list)
-            avg_analog_norm_act = (high_analog_norm_act+avg_analog_norm_act)/2
-            # transform all retrieval activations using a sigmoidal function with a threshold around high_analog_norm_act.
+            avg_analog_norm_act = (high_analog_norm_act + avg_analog_norm_act) / 2
+            # transform all retrieval activations using a sigmoidal function with a threshold
+            # around high_analog_norm_act.
             for analog in memory.analogs:
                 if analog.total_act > 0:
-                    analog.normalised_retrieval_act = 1/(1 + math.exp(10*(analog.normalised_retrieval_act-avg_analog_norm_act)))
+                    analog.normalised_retrieval_act = 1 / (
+                        1 + math.exp(10 * (analog.normalised_retrieval_act - avg_analog_norm_act))
+                    )
             # get the sum of all transformed noralised analog activations.
             sum_analog_norm_act = sum(analog_activation_list)
             # retrieve analogs using the Luce choice rule appled to transformed activations.
             for analog in memory.analogs:
                 # if analog has a .total_act and .num_units > 0, then calculate the retrieve_prob.
                 if analog.total_act > 0 and analog.num_units > 0:
-                    retrieve_prob = analog.normalised_retrieval_act/sum_analog_norm_act
+                    retrieve_prob = analog.normalised_retrieval_act / sum_analog_norm_act
                     randomNum = random.random()
                     if retrieve_prob >= randomNum:
                         # retrieve the analog and all it's tokens.
@@ -2785,23 +3178,27 @@ def retrieve_tokens(memory, bias_retrieval_analogs, use_relative_act):
     else:
         # retirieve using the old Luce choice axiom.
         if bias_retrieval_analogs:
-            # retrieve whole analogs. Create a normalised retrieval score for each analog (i.e., analog.total_act/analog.num_units) and sum up all normalised retrieval scores for each analog in memory.
+            # retrieve whole analogs. Create a normalised retrieval score for each analog
+            # (i.e., analog.total_act/analog.num_units) and sum up all normalised retrieval
+            # scores for each analog in memory.
             sum_normalised_analogs = 0.0
             for analog in memory.analogs:
                 # make sure analog has a .total_act and .num_units > 0.
                 if analog.total_act > 0 and analog.num_units > 0:
                     # calculate my num_units.
                     analog.sum_num_units()
-                    # calculate analog.normalised_retrieval_act and add that to sum_normalised_analogs.
-                    analog.normalised_retrieval_act = analog.total_act/analog.num_units
+                    # calculate analog.normalised_retrieval_act and
+                    # add that to sum_normalised_analogs.
+                    analog.normalised_retrieval_act = analog.total_act / analog.num_units
                     sum_normalised_analogs += analog.normalised_retrieval_act
             # retrieve analogs using the Luce choice axiom.
             for analog in memory.analogs:
-                # if analog has a .total_act and .num_units > 0, then calculate the retrieve_prob via Luce choice.
+                # if analog has a .total_act and .num_units > 0, then calculate the retrieve_prob
+                # via Luce choice.
                 if analog.total_act > 0 and analog.num_units > 0:
-                    retrieve_prob = analog.normalised_retrieval_act/sum_normalised_analogs
+                    retrieve_prob = analog.normalised_retrieval_act / sum_normalised_analogs
                     randomNum = random.random()
-                    if retrieve_prob >= randomNum:# / 1.5: # ekaterina
+                    if retrieve_prob >= randomNum:  # / 1.5: # ekaterina
                         # retrieve the analog and all it's tokens.
                         retrieve_analog_contents(analog)
         else:
@@ -2813,72 +3210,77 @@ def retrieve_tokens(memory, bias_retrieval_analogs, use_relative_act):
                 RB_sum += myRB.max_act
             for myPO in memory.POs:
                 PO_sum += myPO.max_act
-            # for each P, RB, and PO in memorySet (i.e., NOT in driver, recipient, or newSet), retrieve it (and the proposition attached to it) into recipient according to the Luce choice rule.
+            # for each P, RB, and PO in memorySet (i.e., NOT in driver, recipient, or newSet),
+            # retrieve it (and the proposition attached to it) into recipient according to the Luce
+            # choice rule.
             # P units.
             for myP in memory.Ps:
-                # make sure that the P is in memory and that P_sum > 0 (so you don't get a divide by 0 error).
-                if (myP.set == 'memory') and (P_sum > 0):
-                    retrieve_prob = myP.max_act/P_sum
+                # make sure that the P is in memory and that P_sum > 0
+                # (so you don't get a divide by 0 error).
+                if (myP.set == "memory") and (P_sum > 0):
+                    retrieve_prob = myP.max_act / P_sum
                     randomNum = random.random()
                     if retrieve_prob > randomNum:
                         # retrieve P and all units attached into recipient.
-                        myP.set = 'recipient'
+                        myP.set = "recipient"
                         # add the RBs.
                         for myRB in myP.myRBs:
-                            myRB.set = 'recipient'
+                            myRB.set = "recipient"
                             # add the POs.
-                            myRB.myPred[0].set = 'recipient'
+                            myRB.myPred[0].set = "recipient"
                             # if it has an object add that object.
                             if len(myRB.myObj) >= 1:
-                                myRB.myObj[0].set = 'recipient'
-                            else: # add it's child myP.
-                                myRB.myChildP[0].set = 'recipient'
+                                myRB.myObj[0].set = "recipient"
+                            else:  # add it's child myP.
+                                myRB.myChildP[0].set = "recipient"
             # RB units.
             for myRB in memory.RBs:
                 # make sure that the RB is in memory and that RB_sum > 0 (so you don't get a divide by 0 error).
-                if (myRB.set == 'memory') and (RB_sum > 0):
-                    retrieve_prob = myRB.max_act/RB_sum
+                if (myRB.set == "memory") and (RB_sum > 0):
+                    retrieve_prob = myRB.max_act / RB_sum
                     randomNum = random.random()
                     if retrieve_prob > randomNum:
                         # retrieve RB and all units attached into recipient.
-                        myRB.set = 'recipient'
+                        myRB.set = "recipient"
                         # add the Ps.
                         for myP in myRB.myParentPs:
-                            myP.set = 'recipient'
+                            myP.set = "recipient"
                         # add the POs.
-                        myRB.myPred[0].set = 'recipient'
+                        myRB.myPred[0].set = "recipient"
                         # if it has an object add that object.
                         if len(myRB.myObj) >= 1:
-                            myRB.myObj[0].set = 'recipient'
-                        else: # add it's child myP.
-                            myRB.myChildP[0].set = 'recipient'
+                            myRB.myObj[0].set = "recipient"
+                        else:  # add it's child myP.
+                            myRB.myChildP[0].set = "recipient"
             # PO units.
             for myPO in memory.POs:
                 # make sure that the PO is in memory and that PO_sum > 0 (so you don't get a divide by 0 error).
-                if (myPO.set == 'memory') and (PO_sum > 0):
-                    retrieve_prob = myPO.max_act/PO_sum
+                if (myPO.set == "memory") and (PO_sum > 0):
+                    retrieve_prob = myPO.max_act / PO_sum
                     randomNum = random.random()
                     if retrieve_prob > randomNum:
                         # retrieve PO and all units attached into recipient.
-                        myPO.set = 'recipient'
+                        myPO.set = "recipient"
                         memory.recipient.POs.append(myPO)
                         # add the RBs.
                         for myRB in myPO.myRBs:
-                            myRB.set = 'recipient'
+                            myRB.set = "recipient"
                             # add the RB's P unit if it exists.
                             if len(myRB.myParentPs) > 0:
-                                myRB.myParentPs[0].set = 'recipient'
+                                myRB.myParentPs[0].set = "recipient"
     # returns.
     return memory
+
 
 # funtion to retrieve all of the contents of an analog from memory into the recipient.
 def retrieve_analog_contents(analog):
     for myP in analog.myPs:
-        myP.set = 'recipient'
+        myP.set = "recipient"
     for myRB in analog.myRBs:
-        myRB.set = 'recipient'
+        myRB.set = "recipient"
     for myPO in analog.myPOs:
-        myPO.set = 'recipient'
+        myPO.set = "recipient"
+
 
 # Take as input a set of nodes of a specific type (e.g., memory.POs, or memory.recipient.RBs) and return most active unit.
 def get_most_active_unit(tokens):
@@ -2889,18 +3291,19 @@ def get_most_active_unit(tokens):
             if token.act > active_token.act:
                 active_token = token
         # make sure that you're actually returning an active unit (not just the first token if all token have the same activation (e.g., 0.0)).
-        if active_token.act < .01:
+        if active_token.act < 0.01:
             active_token = None
     else:
         active_token = None
     # returns.
     return active_token
 
+
 # Take as input a set of P units and a tag specifying 'parent' or 'child', and return most active unit of that type.
 def get_most_active_Punit(tokens, tag):
-    if tag == 'parent':
+    if tag == "parent":
         desired_mode = 1
-    elif tag == 'child':
+    elif tag == "child":
         desired_mode = -1
     else:
         desired_mode = 0
@@ -2913,6 +3316,7 @@ def get_most_active_Punit(tokens, tag):
     # returns.
     return active_token
 
+
 # Take as input a unit, and return its mappingConnection link with the greatest weight. If it maps to no unit (i.e., mappingConnection.weight == 0), return 'null'.
 def get_my_max_map(unit):
     max_map = unit.mappingConnections[0]
@@ -2921,8 +3325,9 @@ def get_my_max_map(unit):
             max_map = mapping
     # if the unit I most map to has weight 0, return null, else return unit I most map to.
     if max_map.weight == 0:
-        max_map = 'null'
+        max_map = "null"
     return max_map
+
 
 # Take as input a unit, and return the unit to which it maps. If it maps to no unit, return 'null'.
 def get_my_max_map_unit(unit):
@@ -2932,20 +3337,35 @@ def get_my_max_map_unit(unit):
             max_map = mapping
     # if the unit I most map to has weight 0, return null, else return unit I most map to.
     if max_map.weight == 0:
-        max_map_unit = 'null'
+        max_map_unit = "null"
     else:
         # if I am in driver, return recipientToken, otherwise, return driverToken.
-        if unit.set == 'driver':
+        if unit.set == "driver":
             max_map_unit = max_map.recipientToken
         else:
             max_map_unit = max_map.driverToken
     return max_map_unit
 
+
 # function to do all the necessary checks for entropy/energy based magnitude comparison.
 def en_based_mag_checks(myPO, myPO2):
     # check if they code the same dimension (are they both connected to a semantic unit coding a dimension with a weight near 1?), and whether any POs are connected to any SDM semantics (i.e., "more", "less", or "same").
     # first, do they code for intersecting dimensions.
-    intersect_dim = list(set([x.mySemantic.dimension for x in myPO.mySemantics if x.mySemantic.dimension and x.weight > .9]).intersection([y.mySemantic.dimension for y in myPO2.mySemantics if y.mySemantic.dimension and y.weight > .9]))
+    intersect_dim = list(
+        set(
+            [
+                x.mySemantic.dimension
+                for x in myPO.mySemantics
+                if x.mySemantic.dimension and x.weight > 0.9
+            ]
+        ).intersection(
+            [
+                y.mySemantic.dimension
+                for y in myPO2.mySemantics
+                if y.mySemantic.dimension and y.weight > 0.9
+            ]
+        )
+    )
     # second, does either PO have connections to any SDM semantics with weights above threshold(=.9), or do both connnect to any SDM semantics below threshold(=.9).
     one_mag_sem_present = False
     both_mag_sem_present = False
@@ -2953,13 +3373,23 @@ def en_based_mag_checks(myPO, myPO2):
     both_mag_sem_present_belowThresh = False
     # check myPO and then myPO2 for mag sem above threshold(=.9). If you find any set one_mag_sem_present to True.
     for link in myPO.mySemantics:
-        if link.mySemantic.name == 'same' or link.mySemantic.name == 'different' or link.mySemantic.name == 'more' or link.mySemantic.name == 'less':
-            if link.weight > .9:
+        if (
+            link.mySemantic.name == "same"
+            or link.mySemantic.name == "different"
+            or link.mySemantic.name == "more"
+            or link.mySemantic.name == "less"
+        ):
+            if link.weight > 0.9:
                 one_mag_sem_present = True
                 break
     for link in myPO2.mySemantics:
-        if link.mySemantic.name == 'same' or link.mySemantic.name == 'different' or link.mySemantic.name == 'more' or link.mySemantic.name == 'less':
-            if link.weight > .9:
+        if (
+            link.mySemantic.name == "same"
+            or link.mySemantic.name == "different"
+            or link.mySemantic.name == "more"
+            or link.mySemantic.name == "less"
+        ):
+            if link.weight > 0.9:
                 if one_mag_sem_present:
                     both_mag_sem_present = True
                     break
@@ -2968,13 +3398,23 @@ def en_based_mag_checks(myPO, myPO2):
                     break
     # check if there are mag_sem in eachPO that are below threshold (=.9). If there are any, then set one_mag_sem_present_belowThresh to True, and if there are such sem in both, then set both_mag_sem_present_belowThresh to True.
     for link in myPO.mySemantics:
-        if link.mySemantic.name == 'same' or link.mySemantic.name == 'different' or link.mySemantic.name == 'more' or link.mySemantic.name == 'less':
-            if link.weight < .9:
+        if (
+            link.mySemantic.name == "same"
+            or link.mySemantic.name == "different"
+            or link.mySemantic.name == "more"
+            or link.mySemantic.name == "less"
+        ):
+            if link.weight < 0.9:
                 one_mag_sem_present_belowThresh = True
                 break
     for link in myPO2.mySemantics:
-        if link.mySemantic.name == 'same' or link.mySemantic.name == 'different' or link.mySemantic.name == 'more' or link.mySemantic.name == 'less':
-            if link.weight < .9:
+        if (
+            link.mySemantic.name == "same"
+            or link.mySemantic.name == "different"
+            or link.mySemantic.name == "more"
+            or link.mySemantic.name == "less"
+        ):
+            if link.weight < 0.9:
                 if one_mag_sem_present_belowThresh == True:
                     both_mag_sem_present_belowThresh = True
                     break
@@ -2987,9 +3427,17 @@ def en_based_mag_checks(myPO, myPO2):
     high_dim_weight = 0.0
     for dim in intersect_dim:
         # add the weights of the 'value' semantics for the current dim for both myPO and myPO2. Make sure to add the weights of the most strongly connected dimensional semantics.
-        dim_weights1 = [x for x in myPO.mySemantics if x.mySemantic.dimension == dim and x.mySemantic.ont_status == 'value']
+        dim_weights1 = [
+            x
+            for x in myPO.mySemantics
+            if x.mySemantic.dimension == dim and x.mySemantic.ont_status == "value"
+        ]
         dim_weight1 = [x for x in dim_weights1 if x.weight == max(x.weight for x in dim_weights1)]
-        dim_weights2 = [x for x in myPO2.mySemantics if x.mySemantic.dimension == dim and x.mySemantic.ont_status == 'value']
+        dim_weights2 = [
+            x
+            for x in myPO2.mySemantics
+            if x.mySemantic.dimension == dim and x.mySemantic.ont_status == "value"
+        ]
         dim_weight2 = [x for x in dim_weights2 if x.weight == max(x.weight for x in dim_weights2)]
         # get the current_weight by adding the weights of the dim_weight1 and dim_weight2 links as long as there are links in dim_weight1 and dim_weight2 (i.e., dim_weight1 and dim_weight2 are not empty; dim_weight1 and dim_weight2 will be empty if the current POs are not connected to any absolute dimensional values). Otherwise, current_weight is just 0.0.
         if len(dim_weight1) > 0 and len(dim_weight2) > 0:
@@ -3009,42 +3457,97 @@ def en_based_mag_checks(myPO, myPO2):
     else:
         intersect_dim = []
     # return the intersect_dim and mag_sem_present.
-    return intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh
+    return (
+        intersect_dim,
+        one_mag_sem_present,
+        both_mag_sem_present,
+        one_mag_sem_present_belowThresh,
+        both_mag_sem_present_belowThresh,
+    )
+
 
 # function to check whether to run entropy based magnitude comparison (within) and to run ntropy based magnitude comparison (within) if appropriate.
-def check_and_run_ent_ops_within(myPO, myPO2, intersect_dim, one_mag_sem_present, both_mag_sem_present, one_mag_sem_present_belowThresh, both_mag_sem_present_belowThresh, extend_SDML, pred_only, pred_present, memory, mag_decimal_precision):
+def check_and_run_ent_ops_within(
+    myPO,
+    myPO2,
+    intersect_dim,
+    one_mag_sem_present,
+    both_mag_sem_present,
+    one_mag_sem_present_belowThresh,
+    both_mag_sem_present_belowThresh,
+    extend_SDML,
+    pred_only,
+    pred_present,
+    memory,
+    mag_decimal_precision,
+):
     # run energy based mag comparison. NOTE1: basic_en_based_mag_comparison() and basic_en_based_mag_refinement() do the same thing, but basic_en_based_mag_refinement() is faster when mag sem are already present (no need to build connections) and so is used when it can be (mag_sem_present_belowThresh). NOTE2: There is a separate call to basic_en_based_mag_refinement() for POs that are objects so that refinement does not work on objects when preds_only is True.
-    if not one_mag_sem_present and not both_mag_sem_present_belowThresh and (myPO.predOrObj == 1) and (len(intersect_dim) >= 1):
+    if (
+        not one_mag_sem_present
+        and not both_mag_sem_present_belowThresh
+        and (myPO.predOrObj == 1)
+        and (len(intersect_dim) >= 1)
+    ):
         # no SDM sem present, so run mag_comparison.
-        memory = basic_en_based_mag_comparison(myPO, myPO2, intersect_dim, memory, mag_decimal_precision)
-    elif (myPO.predOrObj == 1) and not both_mag_sem_present and extend_SDML==True:
+        memory = basic_en_based_mag_comparison(
+            myPO, myPO2, intersect_dim, memory, mag_decimal_precision
+        )
+    elif (myPO.predOrObj == 1) and not both_mag_sem_present and extend_SDML == True:
         if one_mag_sem_present or one_mag_sem_present_belowThresh:
             # there are mag_sem present at a high-level (multiple or strongly connected), so refine based on the strongest connected dimension.
             memory = basic_en_based_mag_refinement(myPO, myPO2, memory)
-    elif (myPO.predOrObj == 0) and (len(intersect_dim) >= 1 and pred_only == False) and (pred_present == False) and not one_mag_sem_present:
+    elif (
+        (myPO.predOrObj == 0)
+        and (len(intersect_dim) >= 1 and pred_only == False)
+        and (pred_present == False)
+        and not one_mag_sem_present
+    ):
         # no SDM present, so run mag_comparison on objects.
-        memory = basic_en_based_mag_comparison(myPO, myPO2, intersect_dim, memory, mag_decimal_precision)
+        memory = basic_en_based_mag_comparison(
+            myPO, myPO2, intersect_dim, memory, mag_decimal_precision
+        )
     # returns.
     return memory
+
 
 # function to do basic energy/entropy based magnitude comparison when no magnitude semantics are present.
 def basic_en_based_mag_comparison(myPO, myPO2, intersect_dim, memory, mag_decimal_precision=0):
     # find the semantic links connecting to the absolute dimensional value.
-    sem_link_PO = [link for link in myPO.mySemantics if (link.mySemantic.dimension == intersect_dim[0]) and link.mySemantic.ont_status == 'value']
-    sem_link_PO2 = [link for link in myPO2.mySemantics if (link.mySemantic.dimension == intersect_dim[0]) and link.mySemantic.ont_status == 'value']
+    sem_link_PO = [
+        link
+        for link in myPO.mySemantics
+        if (link.mySemantic.dimension == intersect_dim[0]) and link.mySemantic.ont_status == "value"
+    ]
+    sem_link_PO2 = [
+        link
+        for link in myPO2.mySemantics
+        if (link.mySemantic.dimension == intersect_dim[0]) and link.mySemantic.ont_status == "value"
+    ]
     # if the dimension is numeric (e.g., height-10), then get the average value of all dimensional values in the sem_links_PO and sem_link_PO2 and assign these to extent1 and extent2 respectively.
     if isinstance(sem_link_PO[0].mySemantic.amount, numbers.Number):
-        extent1 = sum([link.mySemantic.amount for link in sem_link_PO])/float(len(sem_link_PO))
-        extent2 = sum([link.mySemantic.amount for link in sem_link_PO2])/float(len(sem_link_PO2))
+        extent1 = sum([link.mySemantic.amount for link in sem_link_PO]) / float(len(sem_link_PO))
+        extent2 = sum([link.mySemantic.amount for link in sem_link_PO2]) / float(len(sem_link_PO2))
     else:
         # otherwise, given that the dimension is non-numeric (e.g., colour-red), then set extent1 and extent2 to the respective values (e.g., red, green) of the 'value' semantics for the compared POs.
         extent1 = sem_link_PO[0].mySemantic.amount
         extent2 = sem_link_PO2[0].mySemantics.amount
     # compute ent_magnitudeMoreLessSame().
-    more, less, same_flag, iterations = ent_magnitudeMoreLessSame(extent1, extent2, mag_decimal_precision)
+    more, less, same_flag, iterations = ent_magnitudeMoreLessSame(
+        extent1, extent2, mag_decimal_precision
+    )
     # find any other dimensional semantics with high weights so that the weights can be reduced by the entropy process.
-    other_sem_links_PO = [link for link in myPO.mySemantics if (link.mySemantic.dimension is not None) and (link.mySemantic.dimension != intersect_dim[0])]
-    other_sem_links_PO2 = [link for link in myPO2.mySemantics if (link.mySemantic.dimension is not None) and (link.mySemantic.dimension != intersect_dim[0])]
+    other_sem_links_PO = [
+        link
+        for link in myPO.mySemantics
+        if (link.mySemantic.dimension is not None)
+        and (link.mySemantic.dimension != intersect_dim[0])
+    ]
+    other_sem_links_PO2 = [
+        link
+        for link in myPO2.mySemantics
+        if (link.mySemantic.dimension is not None)
+        and (link.mySemantic.dimension != intersect_dim[0])
+    ]
     sem_link_PO += other_sem_links_PO
     sem_link_PO2 += other_sem_links_PO2
     # connect the two POs to the appropraite relative magnitude semantics (based on the invariant patterns detected just above).
@@ -3057,36 +3560,73 @@ def basic_en_based_mag_comparison(myPO, myPO2, intersect_dim, memory, mag_decima
     # return memory.
     return memory
 
+
 # function to do basic energy/entropy based magnitude refinement when magnitude semantics are already present.
 def basic_en_based_mag_refinement(myPO, myPO2, memory):
     # if there are magnitude semantics present, and there are some matching dimensions, then activate the appropriate magnitude semantics and matching dimensions, and adjust weights as appropriate (i.e., turn on the appropriate magnitude semantics for each PO, and adjust weight accordingly).
     mag_decimal_precision = 1
     # find the dimension on which they match if there is one.
-    match_dim = list(set([x.mySemantic.dimension for x in myPO.mySemantics if x.mySemantic.dimension and x.mySemantic.ont_status == 'state' and x.weight > .9]).intersection([y.mySemantic.dimension for y in myPO2.mySemantics if y.mySemantic.dimension and y.mySemantic.ont_status == 'state' and y.weight > .9]))
+    match_dim = list(
+        set(
+            [
+                x.mySemantic.dimension
+                for x in myPO.mySemantics
+                if x.mySemantic.dimension and x.mySemantic.ont_status == "state" and x.weight > 0.9
+            ]
+        ).intersection(
+            [
+                y.mySemantic.dimension
+                for y in myPO2.mySemantics
+                if y.mySemantic.dimension and y.mySemantic.ont_status == "state" and y.weight > 0.9
+            ]
+        )
+    )
     # if there is a single matching dimension, then find value on that dimension for each object and update magnitude semantic weights; elif there are multiple matching dimensions, find the matching dimension that each PO is most strongly connected to, and update magnitude semantic weights.
     if len(match_dim) == 1:
         # find the semantic links connecting to the absolute dimensional value.
-        sem_link_PO = [link for link in myPO.mySemantics if (link.mySemantic.dimension == match_dim[0]) and link.mySemantic.ont_status == 'state']
-        sem_link_PO2 = [link for link in myPO2.mySemantics if (link.mySemantic.dimension == match_dim[0]) and link.mySemantic.ont_status == 'state']
+        sem_link_PO = [
+            link
+            for link in myPO.mySemantics
+            if (link.mySemantic.dimension == match_dim[0]) and link.mySemantic.ont_status == "state"
+        ]
+        sem_link_PO2 = [
+            link
+            for link in myPO2.mySemantics
+            if (link.mySemantic.dimension == match_dim[0]) and link.mySemantic.ont_status == "state"
+        ]
         # find value on that dimension for each object and then update magnitude semantic weights.
         PO1_dim_val, PO2_dim_val = 0.0, 0.0
         for link in myPO.myRBs[0].myObj[0].mySemantics:
-            if link.mySemantic.dimension == match_dim[0] and link.mySemantic.ont_status == 'value' and link.mySemantic.amount != None:
+            if (
+                link.mySemantic.dimension == match_dim[0]
+                and link.mySemantic.ont_status == "value"
+                and link.mySemantic.amount != None
+            ):
                 PO1_dim_val = link.mySemantic.amount
                 break
         for link in myPO2.myRBs[0].myObj[0].mySemantics:
-            if link.mySemantic.dimension == match_dim[0] and link.mySemantic.ont_status == 'value'and link.mySemantic.amount != None:
+            if (
+                link.mySemantic.dimension == match_dim[0]
+                and link.mySemantic.ont_status == "value"
+                and link.mySemantic.amount != None
+            ):
                 PO2_dim_val = link.mySemantic.amount
                 break
         # compute ent_magnitudeMoreLessSame().
-        more, less, same_flag, iterations = ent_magnitudeMoreLessSame(PO1_dim_val, PO2_dim_val, mag_decimal_precision)
+        more, less, same_flag, iterations = ent_magnitudeMoreLessSame(
+            PO1_dim_val, PO2_dim_val, mag_decimal_precision
+        )
         # connect the two POs to the appropraite relative magnitude semantics (based on the invariant patterns detected just above).
         if more == PO2_dim_val:
             # call update_mag_semantics() with myPO2 as firstPO and myPO as secondPO.
-            memory = update_mag_semantics(same_flag, myPO2, myPO, sem_link_PO2[0], sem_link_PO[0], memory)
+            memory = update_mag_semantics(
+                same_flag, myPO2, myPO, sem_link_PO2[0], sem_link_PO[0], memory
+            )
         else:
             # call update_mag_semantics() with myPO as firstPO and myPO2 as secondPO.
-            memory = update_mag_semantics(same_flag, myPO, myPO2, sem_link_PO[0], sem_link_PO2[0], memory)
+            memory = update_mag_semantics(
+                same_flag, myPO, myPO2, sem_link_PO[0], sem_link_PO2[0], memory
+            )
     else:
         # find the matching dimension that each PO is most strongly connected to, and then update magnitude semantic weights.
         max_dim = None
@@ -3102,31 +3642,48 @@ def basic_en_based_mag_refinement(myPO, myPO2, memory):
             max_valuePO2 = 0.0
             current_dim_weight = 0.0
             for link in myPO2.mySemantics:
-                if (link.mySemantic.dimension == max_dim) and (isinstance(link.mySemantic.amount, (int, float, complex))):
+                if (link.mySemantic.dimension == max_dim) and (
+                    isinstance(link.mySemantic.amount, (int, float, complex))
+                ):
                     if link.weight > current_dim_weight:
                         max_valuePO2 = link.mySemantic.amount
                         current_dim_weight = link.weight
         # if there are max_dim values, use current max_dim and values to compute ent_magnitudeMoreLessSame().
         if max_dim:
-            more, less, same_flag, iterations = ent_magnitudeMoreLessSame(max_valuePO1, max_valuePO2, mag_decimal_precision)
+            more, less, same_flag, iterations = ent_magnitudeMoreLessSame(
+                max_valuePO1, max_valuePO2, mag_decimal_precision
+            )
             # find the semantic links connecting to the absolute dimensional value.
-            sem_link_PO = [link for link in myPO.mySemantics if (link.mySemantic.dimension == max_dim) and link.mySemantic.ont_status == 'state']
-            sem_link_PO2 = [link for link in myPO2.mySemantics if (link.mySemantic.dimension == max_dim) and link.mySemantic.ont_status == 'state']
+            sem_link_PO = [
+                link
+                for link in myPO.mySemantics
+                if (link.mySemantic.dimension == max_dim) and link.mySemantic.ont_status == "state"
+            ]
+            sem_link_PO2 = [
+                link
+                for link in myPO2.mySemantics
+                if (link.mySemantic.dimension == max_dim) and link.mySemantic.ont_status == "state"
+            ]
             # connect the two POs to the appropraite relative magnitude semantics (based on the invariant patterns detected just above).
             if more == max_valuePO2:
                 # call update_mag_semantics() with myPO2 as firstPO and myPO as secondPO.
-                memory = update_mag_semantics(same_flag, myPO2, myPO, sem_link_PO2[0], sem_link_PO[0], memory)
+                memory = update_mag_semantics(
+                    same_flag, myPO2, myPO, sem_link_PO2[0], sem_link_PO[0], memory
+                )
             else:
                 # call update_mag_semantics() with myPO as firstPO and myPO2 as secondPO.
-                memory = update_mag_semantics(same_flag, myPO, myPO2, sem_link_PO[0], sem_link_PO2[0], memory)
+                memory = update_mag_semantics(
+                    same_flag, myPO, myPO2, sem_link_PO[0], sem_link_PO2[0], memory
+                )
     # return memory.
     return memory
+
 
 # function calculates more/less/same from two codes of extent based on entropy and competion.
 def ent_magnitudeMoreLessSame(extent1, extent2, mag_decimal_precision=0):
     # convert extents to whole numbers using the mag_decimal_precision variable, rounding, and adding 1 (mag_decimal_precision and rouding to make decimal values into whole numbers, and adding 1 to account for the possibility that someone has used 0 values for magnitudes).
-    extent1_rounded = round(extent1*(pow(100, mag_decimal_precision)))+1
-    extent2_rounded = round(extent2*(pow(100, mag_decimal_precision)))+1
+    extent1_rounded = round(extent1 * (pow(100, mag_decimal_precision))) + 1
+    extent2_rounded = round(extent2 * (pow(100, mag_decimal_precision))) + 1
     # take two representations of extent, and have them compete.
     # first build a simple entropyNet with the extents as lower-level nodes.
     entropyNet = dataTypes.entropyNet()
@@ -3139,8 +3696,8 @@ def ent_magnitudeMoreLessSame(extent1, extent2, mag_decimal_precision=0):
     theta = 0.09
     if abs(entropyNet.outputs[0].act - entropyNet.outputs[1].act) < theta:
         # treat the extents as 'same'.
-        more = 'NONE'
-        less = 'NONE'
+        more = "NONE"
+        less = "NONE"
         same_flag = True
     elif entropyNet.outputs[0].act > entropyNet.outputs[1].act:
         more = extent1
@@ -3153,13 +3710,18 @@ def ent_magnitudeMoreLessSame(extent1, extent2, mag_decimal_precision=0):
     # return more, less, a flag indicating whether the values are the same (called same_flag), and the number of iterations to settling (stored in entropyNet.settled_iters).
     return more, less, same_flag, entropyNet.settled_iters
 
+
 # Function to attache magnitude semantics to POs for use with entropy_ops.
 def attach_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2, memory):
     # NOTE: In this function, firstPO is the larger and secondPO is the smaller (unless same_flag is True, in which case the two are equal).
     # NOTE: I think that the following bit of code is redundent, but it's here just in case to make sure that no magnitude semantics are attached to the POs if either of them are already attached to a magnitude semantic. Check if either PO is attached to 'more' or 'less' or 'same', and if so, set attach_mag_sem_flag to False.
     attach_mag_sem_flag = True
     for semantic in firstPO.mySemantics:
-        if semantic.mySemantic.name == 'more' or semantic.mySemantic.name == 'less' or semantic.mySemantic.name == 'same':
+        if (
+            semantic.mySemantic.name == "more"
+            or semantic.mySemantic.name == "less"
+            or semantic.mySemantic.name == "same"
+        ):
             attach_mag_sem_flag = False
     # if attach_mag_sem_flag is True, then go ahead and attach magnitude semantics.
     if attach_mag_sem_flag:
@@ -3168,7 +3730,7 @@ def attach_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
             # find the 'same' semantic (if it does not exist, create it).
             sem_exist_flag = False
             for semantic in memory.semantics:
-                if semantic.name == 'same':
+                if semantic.name == "same":
                     # connect the semantic to both POs.
                     new_link1 = dataTypes.Link(firstPO, [], semantic, 1.0)
                     firstPO.mySemantics.append(new_link1)
@@ -3184,7 +3746,7 @@ def attach_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
             # if the 'same semantic does not exist, make it and connect it to the two POs.
             if not sem_exist_flag:
                 # you have the create the semantics.
-                same_semantic = dataTypes.Semantic('same', 'nil', None, 'SDM')
+                same_semantic = dataTypes.Semantic("same", "nil", None, "SDM")
                 memory.semantics.append(same_semantic)
                 # create links between POs and 'same'.
                 PO1_link = dataTypes.Link(firstPO, [], same_semantic, 1.0)
@@ -3201,7 +3763,7 @@ def attach_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
             sem_exist_flag = False
             sem_added = 0
             for semantic in memory.semantics:
-                if semantic.name == 'more':
+                if semantic.name == "more":
                     # connect the sementic to firstPO.
                     new_link = dataTypes.Link(firstPO, [], semantic, 1.0)
                     firstPO.mySemantics.append(new_link)
@@ -3212,7 +3774,7 @@ def attach_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
                     sem_added += 1
                     if sem_added == 2:
                         break
-                elif semantic.name == 'less':
+                elif semantic.name == "less":
                     # connect the sementic to secondPO.
                     new_link = dataTypes.Link(secondPO, [], semantic, 1.0)
                     secondPO.mySemantics.append(new_link)
@@ -3225,8 +3787,8 @@ def attach_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
                         break
             if not sem_exist_flag:
                 # you have the create the semantics.
-                more_semantic = dataTypes.Semantic('more', 'nil', None, 'SDM')
-                less_semantic = dataTypes.Semantic('less', 'nil', None, 'SDM')
+                more_semantic = dataTypes.Semantic("more", "nil", None, "SDM")
+                less_semantic = dataTypes.Semantic("less", "nil", None, "SDM")
                 memory.semantics.append(more_semantic)
                 memory.semantics.append(less_semantic)
                 # create links between firstPO and 'more'.
@@ -3247,6 +3809,7 @@ def attach_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
     # return memory.
     return memory
 
+
 # function to update the connections to magnitude semantics during the basic_en_based_mag_refinement() function.
 def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2, memory):
     # NOTE: In this function, firstPO is the larger and secondPO is the smaller (unless same_flag is True, in which case the two are equal).
@@ -3256,7 +3819,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
         for link in firstPO.mySemantics:
             if link is sem_link_PO:
                 link.weight = 1.0
-            elif link.mySemantic.name == 'same':
+            elif link.mySemantic.name == "same":
                 link.weight = 1.0
                 found_same = True
             else:
@@ -3264,7 +3827,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
         if not found_same:
             # connect firstPO to same semantic.
             for semantic in memory.semantics:
-                if semantic.name == 'same':
+                if semantic.name == "same":
                     # connect the samentic to firstPO.
                     new_link = dataTypes.Link(firstPO, [], semantic, 1.0)
                     firstPO.mySemantics.append(new_link)
@@ -3275,7 +3838,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
         for link in secondPO.mySemantics:
             if link is sem_link_PO:
                 link.weight = 1.0
-            elif link.mySemantic.name == 'same':
+            elif link.mySemantic.name == "same":
                 link.weight = 1.0
                 found_same = True
             else:
@@ -3283,7 +3846,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
         if not found_same:
             # connect secondPO to same semantic.
             for semantic in memory.semantics:
-                if semantic.name == 'same':
+                if semantic.name == "same":
                     # connect the samentic to secondPO.
                     new_link = dataTypes.Link(firstPO, [], semantic, 1.0)
                     secondPO.mySemantics.append(new_link)
@@ -3296,7 +3859,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
         for link in firstPO.mySemantics:
             if link is sem_link_PO:
                 link.weight = 1.0
-            elif link.mySemantic.name == 'more':
+            elif link.mySemantic.name == "more":
                 link.weight = 1.0
                 found_more = True
             else:
@@ -3304,7 +3867,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
         if not found_more:
             # connect firstPO to more semantic.
             for semantic in memory.semantics:
-                if semantic.name == 'more':
+                if semantic.name == "more":
                     # connect the samentic to firstPO.
                     new_link = dataTypes.Link(firstPO, [], semantic, 1.0)
                     firstPO.mySemantics.append(new_link)
@@ -3316,7 +3879,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
         for link in secondPO.mySemantics:
             if link is sem_link_PO2:
                 link.weight = 1.0
-            elif link.mySemantic.name == 'less':
+            elif link.mySemantic.name == "less":
                 link.weight = 1.0
                 found_less = True
             else:
@@ -3324,7 +3887,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
         if not found_less:
             # connect secondPO to less semantic.
             for semantic in memory.semantics:
-                if semantic.name == 'less':
+                if semantic.name == "less":
                     # connect the samentic to secondPO.
                     new_link = dataTypes.Link(firstPO, [], semantic, 1.0)
                     secondPO.mySemantics.append(new_link)
@@ -3333,6 +3896,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
                     break
     # done.
     return memory
+
 
 # function to calculate over-all same/diff from entropy.
 def ent_overall_same_diff(semantic_array):
@@ -3351,11 +3915,12 @@ def ent_overall_same_diff(semantic_array):
     sum_act = sum(act_array)
     # make sure that you're not dividing by 0 (which can happen if you've tried to compute entropy for empty objects).
     if sum_act > 0:
-        difference_ratio = float(sum_diff)/float(sum_act)
+        difference_ratio = float(sum_diff) / float(sum_act)
     else:
-        difference_ratio = 'undefined'
+        difference_ratio = "undefined"
     # return the difference_ratio.
     return difference_ratio
+
 
 # prediction routine.
 def predication_routine(memory, made_new_pred, gamma):
@@ -3368,14 +3933,14 @@ def predication_routine(memory, made_new_pred, gamma):
             for Link in semantic.myPOs:
                 if memory.newSet.POs[-1] == Link.myPO:
                     # update the connection weight.
-                    Link.weight += (1*(Link.mySemantic.act-Link.weight)*gamma)
+                    Link.weight += 1 * (Link.mySemantic.act - Link.weight) * gamma
                     connected_to_newPO = True
             # if not connected_to_newPO, then learn a connection if semantic.act > 0.
             if (not connected_to_newPO) and (semantic.act > 0):
                 # infer a new Link for new pred and active semantic.
-                new_Link = dataTypes.Link(memory.newSet.POs[-1], 'nil', semantic, 0.0)
+                new_Link = dataTypes.Link(memory.newSet.POs[-1], "nil", semantic, 0.0)
                 # update the weight of the Link.
-                new_Link.weight = 1*(semantic.act-0)*gamma
+                new_Link.weight = 1 * (semantic.act - 0) * gamma
                 # connect new Link to semantic and new pred and add Link to memory.Links.
                 memory.newSet.POs[-1].mySemantics.append(new_Link)
                 semantic.myPOs.append(new_Link)
@@ -3386,13 +3951,17 @@ def predication_routine(memory, made_new_pred, gamma):
         # make sure that there is actually and active_rec_PO (i.e., active_rec_PO != None), of you'll have a crash when trying to check the active_rec_PO.predOrObj.
         if active_rec_PO is not None:
             # if the most active unit is an object and is active above threshold(=.6), and the unit I map to most in the driver is also active above threshold, and our mapping connection is above .75, then infer new pred and RB and connect new pred to new RB, and new RB to active recipient object, and set made_new_pred to True.
-            if active_rec_PO.predOrObj == 0 and active_rec_PO.act > .6:
+            if active_rec_PO.predOrObj == 0 and active_rec_PO.act > 0.6:
                 mapping_connection = get_my_max_map(active_rec_PO)
-                if mapping_connection != 'null':
-                    if mapping_connection.driverToken.act > .6 and (mapping_connection.weight > .75):
+                if mapping_connection != "null":
+                    if mapping_connection.driverToken.act > 0.6 and (
+                        mapping_connection.weight > 0.75
+                    ):
                         # copy the recipient object into the newSet.
                         # make a new object as a copy of active_rec_PO, and fill in .my_maker_unit and .my_made_unit fields for the new object and for active_rec_PO.
-                        new_obj = dataTypes.POUnit(active_rec_PO.name, 'newSet', 'null', True, 'null', 0)
+                        new_obj = dataTypes.POUnit(
+                            active_rec_PO.name, "newSet", "null", True, "null", 0
+                        )
                         new_obj.my_maker_unit = active_rec_PO
                         active_rec_PO.my_made_unit = new_obj
                         # fill in the semantics.
@@ -3408,10 +3977,10 @@ def predication_routine(memory, made_new_pred, gamma):
                         memory.newSet.POs.append(new_obj)
                         # infer new pred and new myRB.
                         # give the new PO the name 'nil' + the len(memory.POs)+1.
-                        new_PO_name = 'nil' + str(len(memory.POs)+1)
-                        new_pred = dataTypes.POUnit(new_PO_name, 'newSet', 'null', True, 'null', 1)
-                        new_RB_name = RB_name=new_PO_name+'+'+new_obj.name
-                        new_RB = dataTypes.RBUnit(new_RB_name, 'newSet', 'null', True, 'null')
+                        new_PO_name = "nil" + str(len(memory.POs) + 1)
+                        new_pred = dataTypes.POUnit(new_PO_name, "newSet", "null", True, "null", 1)
+                        new_RB_name = RB_name = new_PO_name + "+" + new_obj.name
+                        new_RB = dataTypes.RBUnit(new_RB_name, "newSet", "null", True, "null")
                         # connect new_pred to new RB and vise versa.
                         new_pred.myRBs.append(new_RB)
                         new_RB.myPred.append(new_pred)
@@ -3429,6 +3998,7 @@ def predication_routine(memory, made_new_pred, gamma):
     # returns.
     return memory, made_new_pred
 
+
 # form new relation (myP unit).
 def rel_form_routine(memory, inferred_new_P):
     # check to see if a new P has been inferred (i.e, inferred_new_P == True).
@@ -3438,7 +4008,7 @@ def rel_form_routine(memory, inferred_new_P):
         # the new P is the last inferred P, so the last unit in recipient.Ps.
         # connect the newP to active RBs above threshold and not already connected to the P unit (and vise verasa).
         for myRB in memory.recipient.RBs:
-            if (myRB.act >= .8) and (myRB not in memory.recipient.Ps[-1].myRBs):
+            if (myRB.act >= 0.8) and (myRB not in memory.recipient.Ps[-1].myRBs):
                 # connect RB and the new P unit, and update the P unit's .myanalog field if the field is empty.
                 memory.recipient.Ps[-1].myRBs.append(myRB)
                 myRB.myParentPs.append(memory.recipient.Ps[-1])
@@ -3449,8 +4019,10 @@ def rel_form_routine(memory, inferred_new_P):
                     myRB.myanalog.myPs.append(memory.recipient.Ps[-1])
     else:
         # name of the new P should be RB1+RB2+...RBx. For now leave blank and name after phase set.
-        my_name = ''
-        new_P = dataTypes.PUnit(my_name, 'recipient', None, True, None) # NOTE: .myanalog field is left blank for now and updated if the new P sticks around (i.e., if it connects to multiple RBs). The updating is done in the .do_rel_form() function above.
+        my_name = ""
+        new_P = dataTypes.PUnit(
+            my_name, "recipient", None, True, None
+        )  # NOTE: .myanalog field is left blank for now and updated if the new P sticks around (i.e., if it connects to multiple RBs). The updating is done in the .do_rel_form() function above.
         # (my_name, my_set, analog, inferred_now, myanalog)
         memory.Ps.append(new_P)
         memory.recipient.Ps.append(new_P)
@@ -3459,30 +4031,31 @@ def rel_form_routine(memory, inferred_new_P):
     # returns.
     return memory, inferred_new_P
 
+
 # schematization routine.
 def schematization_routine(memory, gamma, phase_set_iterator):
     # for each driver token unit, if that unit is most active unit of its type (e.g., most active P), and maps to a recipient unit, then check if you have caused a unit to be inferred in newSet. If you have caused a unit to be inferred, then set that newSet unit's activation to 1.0, and update connections to other newSet units (myPs to RBs, RBs to Ps and POs, POs to RBs), and for POs to semantic units. If not, then cause a new unit to be inferred.
     # first, find most active myP for parent Ps.
-    most_active_P = get_most_active_Punit(memory.driver.Ps, 'parent')
+    most_active_P = get_most_active_Punit(memory.driver.Ps, "parent")
     # make sure I've returned a unit.
     if most_active_P:
         # if most_active_P has caused a unit to be inferred in newSet, update the newSet unit, otherwise, infer a newSet unit corresponding to most_active_P.
         if most_active_P.my_made_unit:
             # if I am active above threshold, update my newSet unit (set activation to 1.0, connect to active newSet RBs).
-            if most_active_P.act > .4:
+            if most_active_P.act > 0.4:
                 most_active_P.my_made_unit.act = 1.0
                 for myRB in memory.newSet.RBs:
-                    if myRB.act > .5:
+                    if myRB.act > 0.5:
                         # connect any active newSet RB and most_active_P's inferred unit as parent myP.
                         # conect as parent if units not already connected.
                         if not myRB in most_active_P.my_made_unit.myRBs:
                             most_active_P.my_made_unit.myRBs.append(myRB)
                             myRB.myParentPs.append(most_active_P.my_made_unit)
-        else: # I have not caused a unit to be inferred.
+        else:  # I have not caused a unit to be inferred.
             # check if I am active above threshold (=.4), and I map to a recipient unit above threshold (=.75).
-            if (most_active_P.act >= .4) and (most_active_P.max_map >= .75):
+            if (most_active_P.act >= 0.4) and (most_active_P.max_map >= 0.75):
                 # infer a newSet P unit (with activation 1.0) and add it to memory. Set the value of the .myanalog field to 'null', as you will create an analog to house all newSet units at the end of the .doSchematization() routine above.
-                newSet_new_P = dataTypes.PUnit('nil', 'newSet', 0, True, 'null')
+                newSet_new_P = dataTypes.PUnit("nil", "newSet", 0, True, "null")
                 newSet_new_P.mode = most_active_P.mode
                 newSet_new_P.act = 1.0
                 newSet_new_P.my_maker_unit = most_active_P
@@ -3490,26 +4063,26 @@ def schematization_routine(memory, gamma, phase_set_iterator):
                 memory.Ps.append(newSet_new_P)
                 memory.newSet.Ps.append(newSet_new_P)
     # Second, find most active P for child Ps.
-    most_active_P = get_most_active_Punit(memory.driver.Ps, 'child')
+    most_active_P = get_most_active_Punit(memory.driver.Ps, "child")
     # make sure I've returned a unit.
     if most_active_P:
         # if most_active_P has caused a unit to be inferred in newSet, update the newSet unit, otherwise, infer a newSet unit corresponding to most_active_P.
         if most_active_P.my_made_unit:
             # if I am active above threshold, update my newSet unit (set activation to 1.0, connect to active newSet RBs).
-            if most_active_P.act > .4:
+            if most_active_P.act > 0.4:
                 most_active_P.my_made_unit.act = 1.0
                 for myRB in memory.newSet.RBs:
-                    if myRB.act > .5:
+                    if myRB.act > 0.5:
                         # connect any active newSet RB and most_active_P's inferred unit as child myP.
                         # conect as child if units not already connected.
                         if not myRB in most_active_P.my_made_unit.myRBs:
                             most_active_P.my_made_unit.myParentRBs.append(myRB)
                             myRB.myChildP.append(most_active_P.my_made_unit)
-        else: # I have not caused a unit to be inferred.
+        else:  # I have not caused a unit to be inferred.
             # check if I am active above threshold (=.4), and I map to a recipient unit above threshold (=.75).
-            if (most_active_P.act >= .4) and (most_active_P.max_map >= .75):
+            if (most_active_P.act >= 0.4) and (most_active_P.max_map >= 0.75):
                 # infer a newSet P unit (with activation 1.0) and add it to memory. Set the value of the .myanalog field to 'null', as you will create an analog to house all newSet units at the end of the .doSchematization() routine above.
-                newSet_new_P = dataTypes.PUnit('nil', 'newSet', 0, True, 'null')
+                newSet_new_P = dataTypes.PUnit("nil", "newSet", 0, True, "null")
                 newSet_new_P.mode = most_active_P.mode
                 newSet_new_P.act = 1.0
                 newSet_new_P.my_maker_unit = most_active_P
@@ -3524,9 +4097,9 @@ def schematization_routine(memory, gamma, phase_set_iterator):
             # update my newSet unit (set activation to 1.0, connect to active newSet POs).
             most_active_RB.my_made_unit.act = 1.0
             # I don't think you need to do learning for Ps as you do it for Ps above.
-            #for PO in memory.newSet.POs:
+            # for PO in memory.newSet.POs:
             for myPO in memory.newSet.POs:
-                if myPO.act > .5:
+                if myPO.act > 0.5:
                     # connect as pred or object if not already connected.
                     if myPO.predOrObj == 1:
                         if not myPO in most_active_RB.my_made_unit.myPred:
@@ -3536,11 +4109,11 @@ def schematization_routine(memory, gamma, phase_set_iterator):
                         if not myPO in most_active_RB.my_made_unit.myObj:
                             most_active_RB.my_made_unit.myObj.append(myPO)
                             myPO.myRBs.append(most_active_RB.my_made_unit)
-        else: # I have not caused a unit to be inferred.
+        else:  # I have not caused a unit to be inferred.
             # check if I am active above threshold (=.4), and I map to a recipient unit above threshold (=.75).
-            if (most_active_RB.act >= .4) and (most_active_RB.max_map >= .75):
+            if (most_active_RB.act >= 0.4) and (most_active_RB.max_map >= 0.75):
                 # infer a newSet RB unit (with activation 1.0) and add it to memory. Set the value of the .myanalog field to 'null', as you will create an analog to house all newSet units at the end of the .doSchematization() routine above.
-                newSet_new_RB = dataTypes.RBUnit('nil', 'newSet', 0, True, 'null')
+                newSet_new_RB = dataTypes.RBUnit("nil", "newSet", 0, True, "null")
                 newSet_new_RB.act = 1.0
                 newSet_new_RB.my_maker_unit = most_active_RB
                 most_active_RB.my_made_unit = newSet_new_RB
@@ -3560,25 +4133,27 @@ def schematization_routine(memory, gamma, phase_set_iterator):
                 for Link in semantic.myPOs:
                     if most_active_PO.my_made_unit == Link.myPO:
                         # update the connection weight.
-                        Link.weight += (1*(Link.mySemantic.act-Link.weight)*gamma)
+                        Link.weight += 1 * (Link.mySemantic.act - Link.weight) * gamma
                         connected_to_newSetPO = True
                 # if not connected_to_newPO, then learn a connection if semantic.act > 0.
                 if (not connected_to_newSetPO) and (semantic.act > 0):
                     # infer a new Link for new PO and active semantic.
-                    new_Link = dataTypes.Link(most_active_PO.my_made_unit, 'nil', semantic, 0.0)
+                    new_Link = dataTypes.Link(most_active_PO.my_made_unit, "nil", semantic, 0.0)
                     # update the weight of the Link.
-                    new_Link.weight = 1*(semantic.act-0)*gamma
+                    new_Link.weight = 1 * (semantic.act - 0) * gamma
                     # connect new Link to semantic and new pred and add Link to memory.Links.
                     most_active_PO.my_made_unit.mySemantics.append(new_Link)
                     semantic.myPOs.append(new_Link)
                     memory.Links.append(new_Link)
-        else: # I have not caused a unit to be inferred.
+        else:  # I have not caused a unit to be inferred.
             # check if I am active above threshold (=.4), and I map to a recipient unit above threshold (=.75).
-            if (most_active_PO.act >= .4) and (most_active_PO.max_map >= .75):
+            if (most_active_PO.act >= 0.4) and (most_active_PO.max_map >= 0.75):
                 # infer a newSet PO unit (with activation 1.0) and add it to memory. Set the value of the .myanalog field to 'null', as you will create an analog to house all newSet units at the end of the .doSchematization() routine above.
                 # give the new PO the name 'nil' + the len(memory.POs)+1.
-                new_PO_name = 'nil' + str(len(memory.POs)+1)
-                newSet_new_PO = dataTypes.POUnit(new_PO_name, 'newSet', 0, True, 'null', most_active_PO.predOrObj)
+                new_PO_name = "nil" + str(len(memory.POs) + 1)
+                newSet_new_PO = dataTypes.POUnit(
+                    new_PO_name, "newSet", 0, True, "null", most_active_PO.predOrObj
+                )
                 newSet_new_PO.act = 1.0
                 newSet_new_PO.my_maker_unit = most_active_PO
                 most_active_PO.my_made_unit = newSet_new_PO
@@ -3587,20 +4162,23 @@ def schematization_routine(memory, gamma, phase_set_iterator):
     # returns.
     return memory
 
+
 # function to perform relational generalization.
 def rel_gen_routine(memory, gamma, recip_analog):
     # for relational generalization: Recall that only RBs in the driver from the analog that contains mapped tokens are firing. If active driver unit maps to no unit in the recipient, then infer a unit in recipient, set it's activation to 1, and attach it to active units above and below itself (e.g., connect new RBs to Ps and POs, new POs to RBs and semantics, etc.) to which it is NOT already connected. Make sure to mark that the new unit is inferred from the active driver unit (i.e., update .my_made_unit of driver unit and .my_maker_unit of new recipient unit). Newly inferred tokens become part of the same analog as the items in the recipient that map to the analog in the driver that contains the tokens that are currently driving relational generalisation. For example, if the tokens in the driver are part of analog 1, and analog 1 elements map to items in the recipient that are in analog 3, the newly inferred units in the recipient become part of analog 3.
     # start with the PO units. Find the most active driver PO, and make sure that it is both active above .5 and does not map to anything.
     active_PO = get_most_active_unit(memory.driver.POs)
     if active_PO is not None:
-        if active_PO.act >= .5 and active_PO.max_map == 0:
+        if active_PO.act >= 0.5 and active_PO.max_map == 0:
             # if the active unit has not made a unit (i.e., my_made_unit is empty), then make a new unit in recipient to correspond to active unit. Otherwise (i.e., if active unit HAS made a new unit), update the connections between the active unit's made unit and other active recipient units.
             if active_PO.my_made_unit is None:
                 # infer a new PO in recipient of same type as active driver PO, and set activation to 1.
                 mytype = active_PO.predOrObj
                 # give the new PO the name 'nil' + the len(memory.POs)+1.
-                new_PO_name = 'nil' + str(len(memory.POs)+1)
-                new_PO = dataTypes.POUnit(new_PO_name, 'recipient', None, True, recip_analog, mytype)
+                new_PO_name = "nil" + str(len(memory.POs) + 1)
+                new_PO = dataTypes.POUnit(
+                    new_PO_name, "recipient", None, True, recip_analog, mytype
+                )
                 new_PO.act = 1
                 # update the .my_made_unit for driver unit and .my_maker_unit for new recipient unit.
                 active_PO.my_made_unit = new_PO
@@ -3622,16 +4200,16 @@ def rel_gen_routine(memory, gamma, recip_analog):
                     for Link in semantic.myPOs:
                         if active_PO.my_made_unit == Link.myPO:
                             # update the connection weight.
-                            Link.weight += (1*(Link.mySemantic.act-Link.weight)*gamma)
+                            Link.weight += 1 * (Link.mySemantic.act - Link.weight) * gamma
                             connected_to_newPO = True
-                            #print (Link.mySemantic.name)
-                            #print (Link.weight)
+                            # print (Link.mySemantic.name)
+                            # print (Link.weight)
                     # if not connected_to_newPO, then learn a connection if semantic.act > 0.
                     if (not connected_to_newPO) and (semantic.act > 0):
                         # infer a new Link for new PO and active semantic.
-                        new_Link = dataTypes.Link(active_PO.my_made_unit, 'nil', semantic, 0.0)
+                        new_Link = dataTypes.Link(active_PO.my_made_unit, "nil", semantic, 0.0)
                         # update the weight of the Link.
-                        new_Link.weight = 1*(semantic.act-0)*gamma
+                        new_Link.weight = 1 * (semantic.act - 0) * gamma
                         # connect new Link to semantic and new pred and add Link to memory.Links.
                         active_PO.my_made_unit.mySemantics.append(new_Link)
                         semantic.myPOs.append(new_Link)
@@ -3639,11 +4217,11 @@ def rel_gen_routine(memory, gamma, recip_analog):
     # move to the RB units. Find the most active driver RB, and make sure that it is both active above .5 and does not map to anything.
     active_RB = get_most_active_unit(memory.driver.RBs)
     if active_RB is not None:
-        if active_RB.act >= .5 and active_RB.max_map == 0:
+        if active_RB.act >= 0.5 and active_RB.max_map == 0:
             # if the active unit has not made a unit (i.e., my_made_unit is empty), then make a new unit in recipient to correspond to active unit. Otherwise (i.e., if active unit HAS made a new unit), update the connections between the active unit's made unit and other active recipient units.
             if active_RB.my_made_unit is None:
                 # infer a new RB in recipient, and set activation to 1.
-                new_RB = dataTypes.RBUnit('nil', 'recipient', None, True, recip_analog)
+                new_RB = dataTypes.RBUnit("nil", "recipient", None, True, recip_analog)
                 new_RB.act = 1
                 # update the .my_made_unit for driver unit and .my_maker_unit for new recipient unit.
                 active_RB.my_made_unit = new_RB
@@ -3660,23 +4238,27 @@ def rel_gen_routine(memory, gamma, recip_analog):
                 # Find the most active PO and connect to the new unit if not already connected, and PO is active above 0.7.
                 most_active_PO = get_most_active_unit(memory.recipient.POs)
                 if most_active_PO:
-                    if most_active_PO.act >= .7:
-                        if (not most_active_PO in active_RB.my_made_unit.myPred) and most_active_PO.predOrObj == 1:
+                    if most_active_PO.act >= 0.7:
+                        if (
+                            not most_active_PO in active_RB.my_made_unit.myPred
+                        ) and most_active_PO.predOrObj == 1:
                             most_active_PO.myRBs.append(active_RB.my_made_unit)
                             active_RB.my_made_unit.myPred.append(most_active_PO)
-                        elif (not most_active_PO in active_RB.my_made_unit.myObj) and most_active_PO.predOrObj == 0:
+                        elif (
+                            not most_active_PO in active_RB.my_made_unit.myObj
+                        ) and most_active_PO.predOrObj == 0:
                             most_active_PO.myRBs.append(active_RB.my_made_unit)
                             active_RB.my_made_unit.myObj.append(most_active_PO)
     # finally, the P units.
     # first, the P units in child mode. Find the most active driver P in child mode, and make sure that it is both active above .5 and does not map to anything.
-    active_P = get_most_active_Punit(memory.driver.Ps, 'child')
+    active_P = get_most_active_Punit(memory.driver.Ps, "child")
     # make sure that the returned active P is actually there (i.e., there is an active P in child mode).
     if active_P:
-        if active_P.act >= .5 and active_P.max_map == 0:
+        if active_P.act >= 0.5 and active_P.max_map == 0:
             # if the active unit has not made a unit (i.e., my_made_unit is empty), then make a new unit in recipient to correspond to active unit. Otherwise (i.e., if active unit HAS made a new unit), update the connections between the active unit's made unit and other active recipient units.
             if active_P.my_made_unit is None:
                 # infer a new P in recipient, make sure it is in child mode, and set its activation to 1.
-                new_P = dataTypes.PUnit('nil', 'recipient', None, True, recip_analog)
+                new_P = dataTypes.PUnit("nil", "recipient", None, True, recip_analog)
                 new_P.mode = -1
                 new_P.act = 1
                 # update the .my_made_unit for driver unit and .my_maker_unit for new recipient unit.
@@ -3692,18 +4274,20 @@ def rel_gen_routine(memory, gamma, recip_analog):
                 active_P.my_made_unit.act = 1
                 # new unit is a P in child mode, so update connections to RBs above. Find the most active RB and connect to the new unit if not already connected, and RB is active above 0.7.
                 most_active_RB = get_most_active_unit(memory.recipient.RBs)
-                if most_active_RB.act >= .7 and (not most_active_RB in active_P.my_made_unit.myParentRBs):
+                if most_active_RB.act >= 0.7 and (
+                    not most_active_RB in active_P.my_made_unit.myParentRBs
+                ):
                     active_P.my_made_unit.myParentRBs.append(most_active_RB)
                     most_active_RB.myChildP.append(active_P.my_made_unit)
     # now for the P units in parent mode. Find the most active driver P in parent mode, and make sure that it is both active above .5 and does not map to anything.
-    active_P = get_most_active_Punit(memory.driver.Ps, 'parent')
+    active_P = get_most_active_Punit(memory.driver.Ps, "parent")
     # make sure that the returned active P is actually there (i.e., there is an active P in parent mode).
     if active_P:
-        if active_P.act >= .5 and active_P.max_map == 0:
+        if active_P.act >= 0.5 and active_P.max_map == 0:
             # if the active unit has not made a unit (i.e., my_made_unit is empty), then make a new unit in recipient to correspond to active unit. Otherwise (i.e., if active unit HAS made a new unit), update the connections between the active unit's made unit and other active recipient units.
             if active_P.my_made_unit is None:
                 # infer a new P in recipient, make sure it is in parent mode, and set its activation to 1.
-                new_P = dataTypes.PUnit('nil', 'recipient', None, True, recip_analog)
+                new_P = dataTypes.PUnit("nil", "recipient", None, True, recip_analog)
                 new_P.mode = 1
                 new_P.act = 1
                 # update the .my_made_unit for driver unit and .my_maker_unit for new recipient unit.
@@ -3719,23 +4303,29 @@ def rel_gen_routine(memory, gamma, recip_analog):
                 active_P.my_made_unit.act = 1
                 # new unit is a P in parent mode, so update connections to RBs below. Find the most active RB and connect to the new unit if not already connected, and RB is active above 0.5, and RB is not already connected to another P unit.
                 most_active_RB = get_most_active_unit(memory.recipient.RBs)
-                if most_active_RB.act >= .5 and (not most_active_RB in active_P.my_made_unit.myRBs) and len(most_active_RB.myParentPs) < 1:
+                if (
+                    most_active_RB.act >= 0.5
+                    and (not most_active_RB in active_P.my_made_unit.myRBs)
+                    and len(most_active_RB.myParentPs) < 1
+                ):
                     active_P.my_made_unit.myRBs.append(most_active_RB)
                     most_active_RB.myParentPs.append(active_P.my_made_unit)
     # returns.
     return memory
 
+
 # ekaterina: function to assist .do_compression() and .do_unpacking(); recruits a new RB unit
 def infer_RB(memory, new_RB):
     # if there is no new_RB, make one and assign it to new_RB
     if not new_RB:
-        made_RB_name = 'rb_' + str(len(memory.RBs)+1)
-        newSet_new_RB = dataTypes.RBUnit(made_RB_name, 'newSet', None, True, None)
+        made_RB_name = "rb_" + str(len(memory.RBs) + 1)
+        newSet_new_RB = dataTypes.RBUnit(made_RB_name, "newSet", None, True, None)
         newSet_new_RB.act = 1.0
         memory.RBs.append(newSet_new_RB)
         memory.newSet.RBs.append(newSet_new_RB)
         new_RB = newSet_new_RB
     return memory, new_RB
+
 
 # ekaterina: function to assist .do_compression() and .do_unpacking(); recruits a new PO unit which learns connections to the semantics and to the RB unit
 def infer_PO(memory, new_RB, gamma):
@@ -3752,15 +4342,15 @@ def infer_PO(memory, new_RB, gamma):
             for Link in semantic.myPOs:
                 if most_active_PO.my_made_unit == Link.myPO:
                     # update the connection weight.
-                    Link.weight += (1*(Link.mySemantic.act-Link.weight)*gamma)
+                    Link.weight += 1 * (Link.mySemantic.act - Link.weight) * gamma
                     connected_to_newSetPO = True
 
             # if not connected_to_newPO, then learn a connection if semantic.act > 0.
             if (not connected_to_newSetPO) and (semantic.act > 0):
                 # infer a new Link for new PO and active semantic.
-                new_Link = dataTypes.Link(most_active_PO.my_made_unit, 'nil', semantic, 0.0)
+                new_Link = dataTypes.Link(most_active_PO.my_made_unit, "nil", semantic, 0.0)
                 # update the weight of the Link.
-                new_Link.weight = 1*(semantic.act-0)*gamma
+                new_Link.weight = 1 * (semantic.act - 0) * gamma
                 # connect new Link to semantic and new pred and add Link to memory.Links.
                 most_active_PO.my_made_unit.mySemantics.append(new_Link)
                 semantic.myPOs.append(new_Link)
@@ -3775,12 +4365,14 @@ def infer_PO(memory, new_RB, gamma):
             if most_active_PO.my_made_unit not in new_RB.myObj:
                 new_RB.myObj.append(most_active_PO.my_made_unit)
                 most_active_PO.my_made_unit.myRBs.append(new_RB)
-    else: # I have not caused a unit to be inferred.
+    else:  # I have not caused a unit to be inferred.
         # infer a newSet PO unit (with activation 1.0) and add it to memory. Set the value of the .myanalog field to 'null', as you will create an analog to house all newSet units at the end of the .doCompression() routine
         # give the new PO the name
         # new_PO_name = 'new_' + most_active_PO.name
-        new_PO_name = 'po_' + str(len(memory.POs)+1)
-        newSet_new_PO = dataTypes.POUnit(new_PO_name, 'newSet', 0, True, 'null', most_active_PO.predOrObj)
+        new_PO_name = "po_" + str(len(memory.POs) + 1)
+        newSet_new_PO = dataTypes.POUnit(
+            new_PO_name, "newSet", 0, True, "null", most_active_PO.predOrObj
+        )
         newSet_new_PO.act = 1.0
         newSet_new_PO.my_maker_unit = most_active_PO
         most_active_PO.my_made_unit = newSet_new_PO
@@ -3789,6 +4381,7 @@ def infer_PO(memory, new_RB, gamma):
         memory.newSet.POs.append(newSet_new_PO)
 
     return memory, new_RB
+
 
 # function to find objects in the driver that are bound to multiple preds.
 def find_objs_for_compression(driver):
@@ -3800,14 +4393,15 @@ def find_objs_for_compression(driver):
     # returns.
     return objs_for_compression
 
+
 # ekaterina: performs compression operations
 def compression_routine(memory, made_RB, compressed_PO, ho_sem, gamma):
     # find the most active PO
     most_active_PO = get_most_active_unit(memory.driver.POs)
-        # if there is no made_RB, make one, and set made_RB to that RB.
+    # if there is no made_RB, make one, and set made_RB to that RB.
     if not made_RB:
-        made_RB_name = 'rb_' + str(len(memory.RBs)+1)
-        made_RB = dataTypes.RBUnit(made_RB_name, 'newSet', None, True, None)
+        made_RB_name = "rb_" + str(len(memory.RBs) + 1)
+        made_RB = dataTypes.RBUnit(made_RB_name, "newSet", None, True, None)
         made_RB.act = 1.0
 
         memory.RBs.append(made_RB)
@@ -3815,11 +4409,11 @@ def compression_routine(memory, made_RB, compressed_PO, ho_sem, gamma):
         memory.newSet.RBs.append(made_RB)
 
         # recruit a PO unit to serve as the compressed predicate
-        newPOname = ''
+        newPOname = ""
         # a name for a new cumulative predicate which consists of names of all the active predicates
         for pred in most_active_PO.same_RB_POs:
             newPOname += pred.name
-        compressed_PO = dataTypes.POUnit(newPOname, 'newSet', None, True, None, 1)
+        compressed_PO = dataTypes.POUnit(newPOname, "newSet", None, True, None, 1)
         compressed_PO.act = 1.0
 
         # add to memory
@@ -3842,15 +4436,15 @@ def compression_routine(memory, made_RB, compressed_PO, ho_sem, gamma):
             for Link in semantic.myPOs:
                 if most_active_PO.my_made_unit == Link.myPO:
                     # update the connection weight.
-                    Link.weight += (1*(Link.mySemantic.act-Link.weight)*gamma)
+                    Link.weight += 1 * (Link.mySemantic.act - Link.weight) * gamma
                     connected_to_newSetPO = True
 
             # if the semantic is not connected to the newly created PO, learn a connection if semantic.act > 0 and the semantic is not higher-order
-            if (not connected_to_newSetPO) and (semantic.act > 0) and (semantic.ont_status != 'HO'):
+            if (not connected_to_newSetPO) and (semantic.act > 0) and (semantic.ont_status != "HO"):
                 # infer a new Link for new PO and active semantic.
-                new_Link = dataTypes.Link(most_active_PO.my_made_unit, 'nil', semantic, 0.0)
+                new_Link = dataTypes.Link(most_active_PO.my_made_unit, "nil", semantic, 0.0)
                 # update the weight of the Link.
-                new_Link.weight = 1*(semantic.act-0)*gamma
+                new_Link.weight = 1 * (semantic.act - 0) * gamma
                 # connect new Link to semantic and new pred and add Link to memory.Links.
                 most_active_PO.my_made_unit.mySemantics.append(new_Link)
                 semantic.myPOs.append(new_Link)
@@ -3862,22 +4456,22 @@ def compression_routine(memory, made_RB, compressed_PO, ho_sem, gamma):
             if link.mySemantic in ho_sem.semConnect:
                 semIndex = ho_sem.semConnect.index(link.mySemantic)
                 currWeight = ho_sem.semConnectWeights[semIndex]
-                ho_sem.semConnectWeights[semIndex] += (1*(link.mySemantic.act-currWeight)*gamma)
-            else: # if not connected yet, learn a connection if semantic.act > 0
+                ho_sem.semConnectWeights[semIndex] += 1 * (link.mySemantic.act - currWeight) * gamma
+            else:  # if not connected yet, learn a connection if semantic.act > 0
                 if link.mySemantic.act > 0:
                     ho_sem.semConnect.append(link.mySemantic)
                     link.mySemantic.semConnect.append(ho_sem)
                     # weight between semantic and ho_sem are stored in the ho_sem in the list .semConnectWeights; initialize the weight
                     semIndex = ho_sem.semConnect.index(link.mySemantic)
-                    ho_sem.semConnectWeights[semIndex] = 1*(link.mySemantic.act-0)*gamma
+                    ho_sem.semConnectWeights[semIndex] = 1 * (link.mySemantic.act - 0) * gamma
 
-    else: # I have not caused a unit to be inferred (for object) or has not created an ho_sem (for predicate)
+    else:  # I have not caused a unit to be inferred (for object) or has not created an ho_sem (for predicate)
         # infer a newSet PO unit (with activation 1.0) and add it to memory. Set the value of the .myanalog field to 'null', as you will create an analog to house all newSet units at the end of the .doCompression() routine above.
         if most_active_PO.predOrObj == 0:
             # name for the object
-            new_PO_name = 'po_' + str(len(memory.POs)+1)
+            new_PO_name = "po_" + str(len(memory.POs) + 1)
             # new_PO_name = 'new_' + most_active_PO.name
-            newSet_new_PO = dataTypes.POUnit(new_PO_name, 'newSet', None, True, None, 0)
+            newSet_new_PO = dataTypes.POUnit(new_PO_name, "newSet", None, True, None, 0)
             newSet_new_PO.act = 1.0
             newSet_new_PO.my_maker_unit = most_active_PO
             most_active_PO.my_made_unit = newSet_new_PO
@@ -3892,25 +4486,26 @@ def compression_routine(memory, made_RB, compressed_PO, ho_sem, gamma):
             newSet_new_PO.myRBs.append(made_RB)
 
         # if the most active PO is a pred, recruit a new higher-order semantic, and set ho_sem to that semantic.
-        else: # if most_active_PO.predOrObj == 1:
+        else:  # if most_active_PO.predOrObj == 1:
             # check if this ho_sem already exists in memory; if it does not, recruit a new higher-order semantic unit
-            sem_name = 'ho_sem_' + most_active_PO.name
+            sem_name = "ho_sem_" + most_active_PO.name
             recruitHO = True
             for sem in memory.semantics:
                 if sem.name == sem_name:
                     recruitHO = False
                     ho_sem = sem
             if recruitHO:
-                ho_sem = dataTypes.Semantic(sem_name, None, None, 'HO')
+                ho_sem = dataTypes.Semantic(sem_name, None, None, "HO")
                 memory.semantics.append(ho_sem)
 
             # learn a connection between the new HO semantic and compressed_PO
-            newLink = dataTypes.Link(compressed_PO, 'nil', ho_sem, 1.0)
+            newLink = dataTypes.Link(compressed_PO, "nil", ho_sem, 1.0)
             compressed_PO.mySemantics.append(newLink)
             ho_sem.myPOs.append(newLink)
             memory.Links.append(newLink)
 
     return memory, made_RB, compressed_PO, ho_sem
+
 
 # ekaterina: function to find compressed predicates -- the ones with higher-order semantics
 def find_preds_to_unpack(driver):
@@ -3919,15 +4514,18 @@ def find_preds_to_unpack(driver):
         # add predicate connected to ho_sems to the list
         if myPO.predOrObj == 1:
             for link in myPO.mySemantics:
-                if link.mySemantic.ont_status == 'HO':
+                if link.mySemantic.ont_status == "HO":
                     preds_to_unpack.append(myPO)
                     break
     return preds_to_unpack
 
+
 # ekaterina: helper function for .unpacking_routine(); creates a new PO unit
 def create_PO(memory, most_active_PO):
-    new_PO_name = 'po_' + str(len(memory.POs)+1)
-    newSet_new_PO = dataTypes.POUnit(new_PO_name, 'newSet', 0, True, 'null', most_active_PO.predOrObj)
+    new_PO_name = "po_" + str(len(memory.POs) + 1)
+    newSet_new_PO = dataTypes.POUnit(
+        new_PO_name, "newSet", 0, True, "null", most_active_PO.predOrObj
+    )
     newSet_new_PO.act = 1.0
     newSet_new_PO.my_maker_unit = most_active_PO
     most_active_PO.my_made_units.append(newSet_new_PO)
@@ -3935,22 +4533,29 @@ def create_PO(memory, most_active_PO):
     memory.newSet.POs.append(newSet_new_PO)
     return memory, newSet_new_PO
 
+
 # ekaterina: function to perform unpacking operations
 def unpacking_routine(memory, made_RBs, currentPO, gamma, tokenize):
     # find the most active PO
     most_active_PO = get_most_active_unit(memory.driver.POs)
     # count how many POs are needed -- as many as ho_sems are connected to the compressed predicate
-    if most_active_PO.predOrObj == 0: # most_active_PO is an object
-        for pred in most_active_PO.same_RB_POs: # for all predicates bound to the current object find the one with ho sems and count them
+    if most_active_PO.predOrObj == 0:  # most_active_PO is an object
+        for (
+            pred
+        ) in (
+            most_active_PO.same_RB_POs
+        ):  # for all predicates bound to the current object find the one with ho sems and count them
             hoSemCount = count_ho_sem(pred)
             if hoSemCount > 0:
                 break
-    else: # most_active_PO is the compressed predicate, count its ho sems
+    else:  # most_active_PO is the compressed predicate, count its ho sems
         hoSemCount = count_ho_sem(most_active_PO)
 
     # if made_RBs is an empty list, make new RBs, one for each unpacked (and simple originally) role
     if not made_RBs:
-        for i in range(2*hoSemCount): # each higher-order semantic yields two simple predicates when everything is unpacked, thus, we need 2 new RBs for each
+        for i in range(
+            2 * hoSemCount
+        ):  # each higher-order semantic yields two simple predicates when everything is unpacked, thus, we need 2 new RBs for each
             memory, made_RB = infer_RB(memory, None)
             made_RBs.append(made_RB)
 
@@ -3961,7 +4566,9 @@ def unpacking_routine(memory, made_RBs, currentPO, gamma, tokenize):
 
         # if most_active_PO is an object, teach its copies (stored in most_active_PO.my_made_units) connections to most_active_PO's semantics
         if most_active_PO.predOrObj == 0:
-            for inferredPO in most_active_PO.my_made_units: # for each PO unit inferred by the most_active_PO
+            for (
+                inferredPO
+            ) in most_active_PO.my_made_units:  # for each PO unit inferred by the most_active_PO
                 for semantic in memory.semantics:
                     # check if I am connected to the newSet myPO. If yes, update my connection based on semantic activation. If not, and I am active, infer a connection.
                     connected_to_inferredPO = False
@@ -3969,42 +4576,50 @@ def unpacking_routine(memory, made_RBs, currentPO, gamma, tokenize):
                     for Link in semantic.myPOs:
                         if inferredPO == Link.myPO:
                             # update the connection weight.
-                            Link.weight += (1*(Link.mySemantic.act-Link.weight)*gamma)
+                            Link.weight += 1 * (Link.mySemantic.act - Link.weight) * gamma
                             connected_to_inferredPO = True
 
                     # if not connected_to_newPO, then learn a connection if semantic.act > 0.
                     if (not connected_to_inferredPO) and (semantic.act > 0):
                         # infer a new Link for new PO and active semantic.
-                        new_Link = dataTypes.Link(inferredPO, 'nil', semantic, 0.0)
+                        new_Link = dataTypes.Link(inferredPO, "nil", semantic, 0.0)
                         # update the weight of the Link.
-                        new_Link.weight = 1*(semantic.act-0)*gamma
+                        new_Link.weight = 1 * (semantic.act - 0) * gamma
                         # connect new Link to semantic and new pred and add Link to memory.Links.
                         inferredPO.mySemantics.append(new_Link)
                         semantic.myPOs.append(new_Link)
                         memory.Links.append(new_Link)
 
-        else: # if most_active_PO is the compressed predicate, teach POs inferred by it (they will play unpacked roles) connections to semantics; for that use connections between each ho_sem and regular semantics
+        else:  # if most_active_PO is the compressed predicate, teach POs inferred by it (they will play unpacked roles) connections to semantics; for that use connections between each ho_sem and regular semantics
             ho_sems = []
             for link in most_active_PO.mySemantics:
-                if link.mySemantic.ont_status == 'HO':
+                if link.mySemantic.ont_status == "HO":
                     ho_sems.append(link.mySemantic)
             i = 0
-            for ho in ho_sems: # for each ho_sem all the regular semantics connected to it need to be connected to one of the unpacked predicates
-                for j in range(i, 4, 2): # each higer-order semantic helps to create two unpacked predicates -- one in each of the RBs
-                    inferredPO = most_active_PO.my_made_units[j] # current unpacked predicate, one in each of the leftmost and then rightmost RBs (see notes 7.feb.22 for details)
+            for (
+                ho
+            ) in (
+                ho_sems
+            ):  # for each ho_sem all the regular semantics connected to it need to be connected to one of the unpacked predicates
+                for j in range(
+                    i, 4, 2
+                ):  # each higer-order semantic helps to create two unpacked predicates -- one in each of the RBs
+                    inferredPO = most_active_PO.my_made_units[
+                        j
+                    ]  # current unpacked predicate, one in each of the leftmost and then rightmost RBs (see notes 7.feb.22 for details)
                     for semantic in ho.semConnect:
                         connected_to_inferredPO = False
                         for Link in semantic.myPOs:
                             if Link.myPO == inferredPO:
                                 # update the connection weight.
-                                Link.weight += (1*(Link.mySemantic.act-Link.weight)*gamma)
+                                Link.weight += 1 * (Link.mySemantic.act - Link.weight) * gamma
                                 connected_to_inferredPO = True
 
                         if (not connected_to_inferredPO) and (semantic.act > 0):
                             # infer a new Link for new PO and active semantic.
-                            new_Link = dataTypes.Link(inferredPO, 'nil', semantic, 0.0)
+                            new_Link = dataTypes.Link(inferredPO, "nil", semantic, 0.0)
                             # update the weight of the Link.
-                            new_Link.weight = 1*(semantic.act-0)*gamma
+                            new_Link.weight = 1 * (semantic.act - 0) * gamma
                             # connect new Link to semantic and new pred and add Link to memory.Links.
                             inferredPO.mySemantics.append(new_Link)
                             semantic.myPOs.append(new_Link)
@@ -4012,25 +4627,29 @@ def unpacking_routine(memory, made_RBs, currentPO, gamma, tokenize):
 
                             # while this semantic is active, mark the simpler role as a maker unit for the inferred PO: needed for .bind_others_to_unpacked()
                             for Link in semantic.myPOs:
-                                if Link.myPO.set == 'driver':
+                                if Link.myPO.set == "driver":
                                     inferredPO.my_maker_unit = Link.myPO
                                     Link.myPO.my_made_unit = inferredPO
                 i += 1
 
-    else: # I have not caused any units to be inferred
+    else:  # I have not caused any units to be inferred
         # infer PO units (with activation 1.0) by the number of ho_sems and add them to memory;
         # new_POs is the list of newly recruited PO units on this step; we need the list to make sure we can create 1, 2, 4, etc. copies of the most_active_PO unit
         new_POs = []
-        if most_active_PO.predOrObj == 0: # if it is an object (whose roles are unpacked) we need only as many copies of it as there are HOs
-        # tokenize = True: the object creates multiple copies of itself (by the number of HO-semantics) and the propositions with its copies will all be in different analogs
-        # tokenize = False: the object creates only one copy of itself (for all unpacked propositions) and all unpacked propositions will be in the same analog
+        if (
+            most_active_PO.predOrObj == 0
+        ):  # if it is an object (whose roles are unpacked) we need only as many copies of it as there are HOs
+            # tokenize = True: the object creates multiple copies of itself (by the number of HO-semantics) and the propositions with its copies will all be in different analogs
+            # tokenize = False: the object creates only one copy of itself (for all unpacked propositions) and all unpacked propositions will be in the same analog
             if tokenize:
                 how_many_copies = hoSemCount
             else:
                 how_many_copies = 1
         else:
-            how_many_copies = 2*hoSemCount # if it is a predicate, make twice as many copies
-        for i in range(how_many_copies): # each higher-order semantic yields two simple predicates when everything is unpacked
+            how_many_copies = 2 * hoSemCount  # if it is a predicate, make twice as many copies
+        for i in range(
+            how_many_copies
+        ):  # each higher-order semantic yields two simple predicates when everything is unpacked
             memory, newSet_new_PO = create_PO(memory, most_active_PO)
             new_POs.append(newSet_new_PO)
 
@@ -4050,8 +4669,8 @@ def unpacking_routine(memory, made_RBs, currentPO, gamma, tokenize):
                 # make sure the original proposition had a P unit, if yes -- create one for the unpacked version of the proposition
                 if most_active_PO.myRBs[0].myParentPs:
                     # also, recruit a P unit and make new_RB[i] learn  the connection to it -- we need 2 new P units, one for each copy of an object
-                    newPname = 'p_' + str(len(memory.Ps)+1)
-                    unpack_P = dataTypes.PUnit(newPname, 'newSet', None, True, None)
+                    newPname = "p_" + str(len(memory.Ps) + 1)
+                    unpack_P = dataTypes.PUnit(newPname, "newSet", None, True, None)
                     unpack_P.act = 1.0
 
                     # mark the P in the driver as a maker unit of the newly recruited P in the emerging recipient
@@ -4070,13 +4689,15 @@ def unpacking_routine(memory, made_RBs, currentPO, gamma, tokenize):
             new_POs[i].myRBs.append(made_RBs[i])
     return memory, made_RBs, hoSemCount
 
+
 # ekaterina: function to count the number of higher-order semantics connected to the compressed predicate
 def count_ho_sem(myPred):
-    hoSemCount = 0 # to count the number of ho_sems
+    hoSemCount = 0  # to count the number of ho_sems
     for link in myPred.mySemantics:
-        if link.mySemantic.ont_status == 'HO':
+        if link.mySemantic.ont_status == "HO":
             hoSemCount += 1
     return hoSemCount
+
 
 # function to find the analog in the recipient that contains all the mapped recipient units. Currently for use only with rel_gen_routine() function.
 def find_recip_analog(memory):
@@ -4088,6 +4709,7 @@ def find_recip_analog(memory):
     # returns.
     return recip_analog
 
+
 # function to find the analog in the driver that contains all the mapped driver units. Currently for use only with do_rel_gen() routine from the runDORA object.
 def find_driver_analog_rel_gen(memory):
     # search through the POs in the driver and find their analog. (You only need to search the POs because all driver units that map are from a single analog, and all analogs contain at least POs.)
@@ -4097,6 +4719,7 @@ def find_driver_analog_rel_gen(memory):
             break
     # returns.
     return driver_analog
+
 
 # function to put items in newSet into an analog
 def newSet_items_to_analog(memory):
@@ -4117,6 +4740,7 @@ def newSet_items_to_analog(memory):
     # returns.
     return memory
 
+
 # function to fix high weight of predicate to 1. This function updates the weights of the most strongly connected semantic(s) of the pred to 1.0.
 def calibrate_weight(memory):
     for myPO in memory.driver.POs:
@@ -4133,10 +4757,11 @@ def calibrate_weight(memory):
     # return memory.
     return memory
 
+
 # function to update names for all token units in memory.
 def update_Names_all(memory):
     for myPO in memory.POs:
-        PO_name = ''
+        PO_name = ""
         # name me after my most weighted semantics.
         most_weighted_sem = 0.0
         for Link in myPO.mySemantics:
@@ -4144,25 +4769,26 @@ def update_Names_all(memory):
                 most_weighted_sem = Link.weight
         for Link in myPO.mySemantics:
             if Link.weight == most_weighted_sem:
-                myPO.name += '&'
+                myPO.name += "&"
                 myPO.name += Link.mySemantic.name
     for myRB in memory.RBs:
-        RB_name = myRB.myPred[0].name + '+' + myRB.myObj[0].name
+        RB_name = myRB.myPred[0].name + "+" + myRB.myObj[0].name
         myRB.name = myRB.name
     for myP in memory.Ps:
-        P_name = ''
+        P_name = ""
         for myRB in myP.myRBs:
-            P_name += '+'
+            P_name += "+"
             P_name += myRB.name
         myP.name = P_name
     # returns.
     return memory
 
+
 # function to update names for all token units in memory with name 'nil'.
 def update_Names_nil(memory):
     for myPO in memory.POs:
-        if myPO.name == 'nil' or 'nil' in myPO.name:
-            myPO.name = ''
+        if myPO.name == "nil" or "nil" in myPO.name:
+            myPO.name = ""
             # name me after my most weighted semantics.
             most_weighted_sem = 0.0
             for Link in myPO.mySemantics:
@@ -4170,31 +4796,32 @@ def update_Names_nil(memory):
                     most_weighted_sem = Link.weight
             for Link in myPO.mySemantics:
                 if Link.weight == most_weighted_sem:
-                    myPO.name += '&'
+                    myPO.name += "&"
                     myPO.name += Link.mySemantic.name
     for myRB in memory.RBs:
-        if myRB.name == 'nil' or 'nil' in myRB.name:
+        if myRB.name == "nil" or "nil" in myRB.name:
             if len(myRB.myObj) > 0:
-                RB_name = myRB.myPred[0].name + '+' + myRB.myObj[0].name
+                RB_name = myRB.myPred[0].name + "+" + myRB.myObj[0].name
             elif len(myRB.myChildP) > 0:
-                RB_name = myRB.myPred[0].name + '+' + myRB.myChildP[0].name
+                RB_name = myRB.myPred[0].name + "+" + myRB.myChildP[0].name
             else:
-                RB_name = 'somethingWrongWithThisRB'
+                RB_name = "somethingWrongWithThisRB"
             myRB.name = RB_name
     for myP in memory.Ps:
-        if myP.name == 'nil' or 'nil' in myP.name:
-            P_name = ''
+        if myP.name == "nil" or "nil" in myP.name:
+            P_name = ""
             for myRB in myP.myRBs:
-                P_name += '+'
+                P_name += "+"
                 P_name += myRB.name
             myP.name = P_name
     # returns.
     return memory
 
+
 # function to give names to newSet Ps, RBs, and POs after inference.
 def give_Names_inferred(memory):
     for myPO in memory.newSet.POs:
-        PO_name = ''
+        PO_name = ""
         # name me after my most weighted semantics.
         most_weighted_sem = 0.0
         for Link in myPO.mySemantics:
@@ -4202,51 +4829,53 @@ def give_Names_inferred(memory):
                 most_weighted_sem = Link.weight
         for Link in myPO.mySemantics:
             if Link.weight == most_weighted_sem:
-                myPO.name += '&'
+                myPO.name += "&"
                 myPO.name += Link.mySemantic.name
     for myRB in memory.newSet.RBs:
-        RB_name = myRB.myPred.name + '+' + myRB.myObj.name
+        RB_name = myRB.myPred.name + "+" + myRB.myObj.name
         myRB.name = myRB.name
     for myP in memory.newSet.Ps:
-        P_name = ''
+        P_name = ""
         for myRB in myP.myRBs:
-            P_name += '+'
+            P_name += "+"
             P_name += myRB.name
         myP.name = P_name
     for Group in memory.newSet.Ps:
-        Group_name = ''
+        Group_name = ""
         for myP in Group.myRBs:
-            Group_name += '+'
+            Group_name += "+"
             Group_name += myP.name
         Group.name = Group_name
     # returns.
     return memory
 
+
 # function to clear the set field of every token in memory (i.e., to clear WM).
 def clearTokenSet(memory):
     # for each P, RB, and PO, clear the set field.
     for Group in memory.Groups:
-        Group.set = 'memory'
+        Group.set = "memory"
     for myP in memory.Ps:
-        myP.set = 'memory'
+        myP.set = "memory"
     for myRB in memory.RBs:
-        myRB.set = 'memory'
+        myRB.set = "memory"
     for myPO in memory.POs:
-        myPO.set = 'memory'
+        myPO.set = "memory"
     # returns.
     return memory
+
 
 # function to clear the driver.
 def clearDriverSet(memory):
     # for each P, RB, and PO, clear the set field.
     for Group in memory.driver.Groups:
-        Group.set = 'memory'
+        Group.set = "memory"
     for myP in memory.driver.Ps:
-        myP.set = 'memory'
+        myP.set = "memory"
     for myRB in memory.driver.RBs:
-        myRB.set = 'memory'
+        myRB.set = "memory"
     for myPO in memory.driver.POs:
-        myPO.set = 'memory'
+        myPO.set = "memory"
     # now clear the memory.driver fields.
     memory.driver.Ps = []
     memory.driver.RBs = []
@@ -4254,23 +4883,25 @@ def clearDriverSet(memory):
     # returns.
     return memory
 
+
 # function to clear the recipient.
 def clearRecipientSet(memory):
     # for each P, RB, and PO, clear the set field.
     for Group in memory.recipient.Groups:
-        Group.set = 'memory'
+        Group.set = "memory"
     for myP in memory.recipient.Ps:
-        myP.set = 'memory'
+        myP.set = "memory"
     for myRB in memory.recipient.RBs:
-        myRB.set = 'memory'
+        myRB.set = "memory"
     for myPO in memory.recipient.POs:
-        myPO.set = 'memory'
+        myPO.set = "memory"
     # now clear the memory.recipient fields.
     memory.recipient.Ps = []
     memory.recipient.RBs = []
     memory.recipient.POs = []
     # returns.
     return memory
+
 
 # reset the .inferred, .my_made_unit, .my_maker_unit field of all tokens.
 def reset_inferences(memory):
@@ -4293,6 +4924,7 @@ def reset_inferences(memory):
     # returns.
     return memory
 
+
 # fucntion to clear the my_maker_ and my_made_unit of all tokens in memory. Used after learning is returns and WM is cleared.
 def reset_maker_made_units(memory):
     for Group in memory.Groups:
@@ -4310,11 +4942,12 @@ def reset_maker_made_units(memory):
     # returns.
     return memory
 
+
 # function to add a token and all it's child tokens to driver or recipient.
 def add_tokens_to_set(memory, token_num, token_type, the_set):
     # put the token and all tokens under it into the set.
     # if the token is a P, then add it's RBs, and each RBs args, and if the arg is a P, then repeat the process for that P's RBs and the RBs' args.
-    if token_type == 'analog':
+    if token_type == "analog":
         # add all the analog's P units.
         for myP in memory.analogs[token_num].myPs:
             myP.set = the_set
@@ -4324,7 +4957,7 @@ def add_tokens_to_set(memory, token_num, token_type, the_set):
         # add all the analog's PO units.
         for myPO in memory.analogs[token_num].myPOs:
             myPO.set = the_set
-    elif token_type == 'P':
+    elif token_type == "P":
         # add the P.
         memory.Ps[token_num].set = the_set
         # add my RBs.
@@ -4338,8 +4971,8 @@ def add_tokens_to_set(memory, token_num, token_type, the_set):
             else:
                 myRB.myChildP[0].get_index(memory)
                 new_token_num = myRB.myChildP[0].my_index
-                memory = add_tokens_to_set(memory, new_token_num, 'P', the_set)
-    elif token_type == 'RB':
+                memory = add_tokens_to_set(memory, new_token_num, "P", the_set)
+    elif token_type == "RB":
         # add the myRB.
         memory.RBs[token_num].set = the_set
         # add the RB's pred.
@@ -4353,12 +4986,13 @@ def add_tokens_to_set(memory, token_num, token_type, the_set):
         else:
             memory.RBs[token_num].myChildP[0].get_index(memory)
             new_token_num = memory.RBs[token_num].myChildP[0].my_index
-            memory = add_tokens_to_set(memory, new_token_num, 'P', the_set)
-    elif token_type == 'PO':
+            memory = add_tokens_to_set(memory, new_token_num, "P", the_set)
+    elif token_type == "PO":
         # add the PO.
         memory.POs[token_num].set = the_set
     # returns.
     return memory
+
 
 # function implementing kludgey comparitor/compariter (used in Doumas et al., 2008, adopted from Hummel & Biederman, 1992).
 def kludgey_comparitor(PO1, PO2, memory):
@@ -4369,33 +5003,45 @@ def kludgey_comparitor(PO1, PO2, memory):
     # find the semantics more/less/same, or make them if they do not exist.
     more, less, same = None, None, None
     for semantic in memory.semantics:
-        if semantic.name == 'more':
+        if semantic.name == "more":
             more = semantic
-        elif semantic.name == 'less':
+        elif semantic.name == "less":
             less = semantic
-        elif semantic.name == 'same':
+        elif semantic.name == "same":
             same = semantic
     if not more:
         # make a 'more' semantic.
-        more = dataTypes.Semantic('more', dimension='comparative')
+        more = dataTypes.Semantic("more", dimension="comparative")
         memory.semantics.append(more)
     if not less:
         # make a 'less' semantic.
-        less = dataTypes.Semantic('less', dimension='comparative')
+        less = dataTypes.Semantic("less", dimension="comparative")
         memory.semantics.append(less)
     if not same:
         # make a 'same' semantic.
-        same = dataTypes.Semantic('same', dimension='comparative')
+        same = dataTypes.Semantic("same", dimension="comparative")
         memory.semantics.append(same)
     # check for a common dimension in the most strongly connected semantics of PO1 and PO2.
     for link1 in PO1.mySemantics:
         # don't operate on comparative semantics (i.e., 'more', 'less', 'same').
-        if (link1.mySemantic.name != 'more') and (link1.mySemantic.name != 'less') and (link1.mySemantic.name != 'same'):
+        if (
+            (link1.mySemantic.name != "more")
+            and (link1.mySemantic.name != "less")
+            and (link1.mySemantic.name != "same")
+        ):
             for link2 in PO2.mySemantics:
                 # don't operate on comparative semantics (i.e., 'more', 'less', 'same').
-                if (link2.mySemantic.name != 'more') and (link2.mySemantic.name != 'less') and (link2.mySemantic.name != 'same'):
-                    if (link1.weight == PO1.max_sem_weight) and (link2.weight == PO2.max_sem_weight):
-                        if (link1.mySemantic.dimension == link2.mySemantic.dimension) and (link1.mySemantic.dimension != 'nil'):
+                if (
+                    (link2.mySemantic.name != "more")
+                    and (link2.mySemantic.name != "less")
+                    and (link2.mySemantic.name != "same")
+                ):
+                    if (link1.weight == PO1.max_sem_weight) and (
+                        link2.weight == PO2.max_sem_weight
+                    ):
+                        if (link1.mySemantic.dimension == link2.mySemantic.dimension) and (
+                            link1.mySemantic.dimension != "nil"
+                        ):
                             # run the simple comparitor.
                             if link1.mySemantic.amount > link2.mySemantic.amount:
                                 # connect PO1 to 'more' and PO2 to 'less'.
@@ -4433,28 +5079,30 @@ def kludgey_comparitor(PO1, PO2, memory):
     # returns.
     return memory
 
+
 # function to switch the contents of driver and recipient.
 def swap_driverRecipient(memory):
     memory.driver, memory.recipient = memory.recipient, memory.driver
     # update the set information for units in new driver/recipient.
     for Group in memory.driver.Groups:
-        Group.set = 'driver'
+        Group.set = "driver"
     for myP in memory.driver.Ps:
-        myP.set = 'driver'
+        myP.set = "driver"
     for myRB in memory.driver.RBs:
-        myRB.set = 'driver'
+        myRB.set = "driver"
     for myPO in memory.driver.POs:
-        myPO.set = 'driver'
+        myPO.set = "driver"
     for Group in memory.recipient.Groups:
-        Group.set = 'recipient'
+        Group.set = "recipient"
     for myP in memory.recipient.Ps:
-        myP.set = 'recipient'
+        myP.set = "recipient"
     for myRB in memory.recipient.RBs:
-        myRB.set = 'recipient'
+        myRB.set = "recipient"
     for myPO in memory.recipient.POs:
-        myPO.set = 'recipient'
+        myPO.set = "recipient"
     # returns.
     return memory
+
 
 # function to make sure that the .myanalog data in all tokens is consistent.
 def check_analog_consistency(memory):
@@ -4463,9 +5111,10 @@ def check_analog_consistency(memory):
     # returns.
     return memory
 
+
 # function to write memory state to a sym file for storage. Takes as arguments the current memory object, and a file_name, which is the name of the file to which the memory state should be written.
 def write_memory_to_symfile(memory, file_name):
-    #create an array of dicts.
+    # create an array of dicts.
     sym_dicts = []
     # for each analog.
     analog_counter = 0
@@ -4494,14 +5143,15 @@ def write_memory_to_symfile(memory, file_name):
                 # add the new sym_dict to sym_dicts.
                 sym_dicts.append(sym_dict)
         # update the analog_counter, so that the next analog in memory has a new number associated with it in the 'analog' field of the sym file.
-        analog_counter +=1
+        analog_counter += 1
     # write all of sym_dicts to text file called file_name using json.
-    json.dump(sym_dicts, open(file_name, 'w'))
+    json.dump(sym_dicts, open(file_name, "w"))
     # now prepend 'simType='sym_file' symProps = '. NOTE: This process is clunky, because you have to write all the json information to a textfile first as the json.dump() function requires a second argument (the open() component), and thus writes over the content of the text file, and consequently does not allow prepended text information. Prepending information to a text file requires rewriting the text file.
-    with open(file_name, 'r+') as f:
-        old_text = f.read() # read all the contents of f into a new variable.
-        f.seek(0) # go back to the start of f.
-        f.write('simType=\'json_sym\' \n' + old_text)
+    with open(file_name, "r+") as f:
+        old_text = f.read()  # read all the contents of f into a new variable.
+        f.seek(0)  # go back to the start of f.
+        f.write("simType='json_sym' \n" + old_text)
+
 
 # function to create a sym_dict from a P unit.
 def create_dict_P(myP, analog_counter):
@@ -4515,19 +5165,26 @@ def create_dict_P(myP, analog_counter):
             # add p_dict to the array of new_sym_dicts
             new_sym_dicts.append(p_dict)
     # create the new_sym_dicts.
-    new_sym_dict = {'name': myP.name, 'RBs': RBs, 'set': 'memory', 'analog': analog_counter}
+    new_sym_dict = {"name": myP.name, "RBs": RBs, "set": "memory", "analog": analog_counter}
     new_sym_dicts.append(new_sym_dict)
     # return the new_sym_dicts.
     return new_sym_dicts
+
 
 # function to create a sym_dict from a RB unit.
 def create_dict_RB(myRB, analog_counter):
     # make a sym_dict from the current RB.
     RB_dict, p_dict = create_RB_dict(myRB, analog_counter)
     # make a new sym_dict using the new RB_dict.
-    new_sym_dict = {'name': 'non_exist', 'RBs': [RB_dict], 'set': 'memory', 'analog': analog_counter}
+    new_sym_dict = {
+        "name": "non_exist",
+        "RBs": [RB_dict],
+        "set": "memory",
+        "analog": analog_counter,
+    }
     # return new_sym_dict.
     return new_sym_dict
+
 
 # function to create a sym_dict from a PO unit.
 def create_dict_PO(myPO, analog_counter):
@@ -4536,15 +5193,35 @@ def create_dict_PO(myPO, analog_counter):
     for link in myPO.mySemantics:
         # capture both the name of the semantic and the weight of the semantic to the PO in an array.
         # also, if the semantic codes for a dimension, then encode that information in sem_info.
-        if link.mySemantic.dimension == 'nil':
+        if link.mySemantic.dimension == "nil":
             sem_info = [link.mySemantic.name, link.weight]
         else:
-            sem_info = [link.mySemantic.name, link.weight, link.mySemantic.dimension, link.mySemantic.amount]
+            sem_info = [
+                link.mySemantic.name,
+                link.weight,
+                link.mySemantic.dimension,
+                link.mySemantic.amount,
+            ]
         obj_sems.append(sem_info)
     # make new sym_dict.
-    new_sym_dict = {'name': 'non_exist', 'RBs': [{'pred_name': 'non_exist', 'pred_sem': [], 'higher_order': False, 'object_name': myPO.name, 'object_sem': obj_sems, 'P': 'non_exist'}], 'set': 'memory', 'analog': analog_counter}
+    new_sym_dict = {
+        "name": "non_exist",
+        "RBs": [
+            {
+                "pred_name": "non_exist",
+                "pred_sem": [],
+                "higher_order": False,
+                "object_name": myPO.name,
+                "object_sem": obj_sems,
+                "P": "non_exist",
+            }
+        ],
+        "set": "memory",
+        "analog": analog_counter,
+    }
     # return new_sym_dict.
     return new_sym_dict
+
 
 # function to create the RB_dict section of the sym_dict.
 def create_RB_dict(myRB, analog_counter):
@@ -4553,24 +5230,39 @@ def create_RB_dict(myRB, analog_counter):
     for link in myRB.myPred[0].mySemantics:
         # capture both the name of the semantic and the weight of the semantic to the PO in an array.
         # also, if the semantic codes for a dimension, then encode that information in sem_info.
-        if link.mySemantic.dimension == None: # ekaterina changed 'nil' to None
-            if link.mySemantic.ont_status == 'HO': # ekaterina: also take care of higher order semantics and their connections to regular semantics
+        if link.mySemantic.dimension == None:  # ekaterina changed 'nil' to None
+            if (
+                link.mySemantic.ont_status == "HO"
+            ):  # ekaterina: also take care of higher order semantics and their connections to regular semantics
                 regSems = []
                 for sem in link.mySemantic.semConnect:
                     regSems.append(sem.name)
-                sem_info = [link.mySemantic.name, link.weight, None, None, link.mySemantic.ont_status, regSems]
+                sem_info = [
+                    link.mySemantic.name,
+                    link.weight,
+                    None,
+                    None,
+                    link.mySemantic.ont_status,
+                    regSems,
+                ]
             else:
                 sem_info = [link.mySemantic.name, link.weight, None, None, None]
         else:
-            sem_info = [link.mySemantic.name, link.weight, link.mySemantic.dimension, link.mySemantic.amount, link.mySemantic.ont_status]
+            sem_info = [
+                link.mySemantic.name,
+                link.weight,
+                link.mySemantic.dimension,
+                link.mySemantic.amount,
+                link.mySemantic.ont_status,
+            ]
         pred_sems.append(sem_info)
     # check if the RB has a higher order argument.
     # if it has a higher order argument, then set higher_order to True, and create and empty object.
     # else, set higher_order to False, and get the object semantics.
     if len(myRB.myObj) == 0:
         higher_order = True
-        object_name = 'non_exist'
-        object_sems = [] # there are no semantics.
+        object_name = "non_exist"
+        object_sems = []  # there are no semantics.
         # if there is a child P, then create a new sym_dict with that P unit, and set P_name, to the name of that P_unit.
         p_dict = create_dict_P(myRB.myChildP[0], analog_counter)
         P_name = myRB.myChildP[0].name
@@ -4581,30 +5273,43 @@ def create_RB_dict(myRB, analog_counter):
         for link in myRB.myObj[0].mySemantics:
             # capture both the name of the semantic and the weight of the semantic to the PO in an array.
             # also, if the semantic codes for a dimension, then encode that information in sem_info.
-            if link.mySemantic.dimension == 'nil':
+            if link.mySemantic.dimension == "nil":
                 sem_info = [link.mySemantic.name, link.weight]
             else:
-                sem_info = [link.mySemantic.name, link.weight, link.mySemantic.dimension, link.mySemantic.amount]
-            object_sems.append(sem_info )
-        P_name = 'non_exist'
+                sem_info = [
+                    link.mySemantic.name,
+                    link.weight,
+                    link.mySemantic.dimension,
+                    link.mySemantic.amount,
+                ]
+            object_sems.append(sem_info)
+        P_name = "non_exist"
         # create an empty p_dict to pass back (it should be immediately deleted by the function calling this (create_RB_dict) function).
         p_dict = None
     # now make the RB_dict
-    RB_dict = {'pred_name': myRB.myPred[0].name, 'pred_sem': pred_sems, 'higher_order': higher_order, 'object_name': object_name, 'object_sem': object_sems, 'P': P_name}
+    RB_dict = {
+        "pred_name": myRB.myPred[0].name,
+        "pred_sem": pred_sems,
+        "higher_order": higher_order,
+        "object_name": object_name,
+        "object_sem": object_sems,
+        "P": P_name,
+    }
     # and return the RB_dict--and, if necessry, the p_dict.
     return RB_dict, p_dict
+
 
 # ekaterina: clears the newSet
 def clear_NewSet(memory):
     # for each P, RB, and PO, clear the set field
     for Group in memory.newSet.Groups:
-        Group.set = 'memory'
+        Group.set = "memory"
     for myP in memory.newSet.Ps:
-        myP.set = 'memory'
+        myP.set = "memory"
     for myRB in memory.newSet.RBs:
-        myRB.set = 'memory'
+        myRB.set = "memory"
     for myPO in memory.newSet.POs:
-        myPO.set = 'memory'
+        myPO.set = "memory"
     # now clear the memory.newSet fields
     memory.newSet.Ps = []
     memory.newSet.RBs = []
@@ -4612,17 +5317,19 @@ def clear_NewSet(memory):
 
     return memory
 
-def print_analog(analog): # ekaterina
-    print('Analog: ' + str(analog))
+
+def print_analog(analog):  # ekaterina
+    print("Analog: " + str(analog))
     for p in analog.myPs:
-        print('P: ' + p.name)
+        print("P: " + p.name)
         for rb in p.myRBs:
-            print('RB: ' + rb.name)
+            print("RB: " + rb.name)
             for po in rb.myPred:
-                print('Pred: ' + po.name)
+                print("Pred: " + po.name)
             for po in rb.myObj:
-                print('Obj: ' + po.name)
-        print('\n')
+                print("Obj: " + po.name)
+        print("\n")
+
 
 # ekaterina: add a category to the objects of an analog in the driver as a new semantic
 def add_category(memory, category):
@@ -4643,9 +5350,10 @@ def add_category(memory, category):
 
     return memory
 
+
 # ekaterina: extract the category of the exemplar in the recipient
 def extract_category(memory, cat1, cat2):
-    retrieved_cat = ''
+    retrieved_cat = ""
     if memory.recipient.POs:
         for po in memory.recipient.POs:
             for link in po.mySemantics:
@@ -4653,7 +5361,3 @@ def extract_category(memory, cat1, cat2):
                     retrieved_cat = link.mySemantic.name
                     break
     return retrieved_cat
-
-
-
-

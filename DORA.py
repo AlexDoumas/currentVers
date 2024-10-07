@@ -17,7 +17,6 @@ path_name = "pythonDORA/currentVers"  # current path DORA's looking in.
 # Parameters.
 # create a big dictionary called parameters, with all parameters as fields.
 # eta is for using for updating mapping connections.
-# run_order is an array indicating the order of operations for a learning phase (cdr=clear driver and recipient, cr=clear recipient, selectTokens=select token units from memory to place in the driver (the selection of tokens is by analog (i.e., a specific analog is chosen, and all tokens from that analog are placed in the driver)), selectP=select a P at random from memory to place in the driver, , r=retrieval, m=map, p=predicate, f=form new relation, g=relational generalization, s=schema induction, 'b'=between group entropy ops, 'w'=within group entropy ops, 'wp'=within group entropy ops for preds only, (NOTE: b, w, and wp operations are newer to the theory and therefore listed after the old DORA operations; in reality according to the theory, they should occur after retrieval and before mapping) 'co'=compression (NOTE: compression is an old part of the theory covered in Doumas, 2005, but newly implemented for general DORA), c=clear results, cl=limited clear results (just inferences and newSet), wdr= write the current state of the driver and recipient to output file, wn=write current state of the network to output file).
 # ignore_object_semantics is a parameter used when running in LISA mode. It allows DORA to downweight object semantics when multiple propositions are in the driver together. NOTE: I'm not sure if placing this item in the parameters dict is the best long-term solution. Likely, you'll want to integrate switching ignore_object_semantics automatically in the model based on context.
 parameters = {
     "asDORA": True,
@@ -27,6 +26,23 @@ parameters = {
     "HebbBias": 0.5,
     "bias_retrieval_analogs": True,
     "use_relative_act": True,
+    # run_order is an array indicating the order of operations for a learning phase
+    # (cdr=clear driver and recipient, cr=clear recipient,
+    # selectTokens=select token units from memory to place in the driver
+    #   (the selection of tokens is by analog (i.e., a specific analog is chosen,
+    #   and all tokens from that analog are placed in the driver)),
+    # selectP=select a P at random from memory to place in the driver, r=retrieval, m=map,
+    # p=predicate, f=form new relation, g=relational generalization, s=schema induction,
+    # 'b'=between group entropy ops, 'w'=within group entropy ops,
+    # 'wp'=within group entropy ops for preds only,
+    #   (NOTE: b, w, and wp operations are newer to the theory and therefore listed after the old
+    #   DORA operations; in reality according to the theory, they should occur after retrieval
+    #   and before mapping)
+    # 'co'=compression (NOTE: compression is an old part of the theory covered in Doumas, 2005,
+    #   but newly implemented for general DORA),
+    # c=clear results, cl=limited clear results (just inferences and newSet),
+    # wdr= write the current state of the driver and recipient to output file,
+    # wn=write current state of the network to output file).
     "run_order": ["cdr", "selectTokens", "r", "wp", "m", "p", "s", "f", "c"],
     "run_cyles": 5000,
     "write_on_iteration": 100,
@@ -63,7 +79,7 @@ class MainMenu(object):
         self.path_name = path_name
         self.network = None  # initialize the network to empty; filled with runDORA object later.
         # self.memory = basicRunDORA.dataTypes.memorySet()  # initialize an empty memorySet. *****NOTE: I don't think that you actuall need this field. It is subsumed for the purposes of running the model by the .network.memory object (i.e., you do all the work with the .network object, and the .network object has it's own version of the memory object).*****
-        self.file = open("screens.py", "r")
+        self.file = open("conceptarc_dora_sims.py", "r")
         self.write_file = None  # file I should write data to.
         self.sym = None
         self.parameters = parameters
@@ -267,7 +283,7 @@ class MainMenu(object):
 
 # function to run the RunMenu.
 class RunMenu(object):
-    def __init__(self, network, parameters, write_file):
+    def __init__(self, network: basicRunDORA.runDORA, parameters: dict, write_file):
         self.network = network
         self.parameters = parameters
         self.write_file = write_file
@@ -824,7 +840,7 @@ class RunMenu(object):
 
 # object to perform flow of control for DORA controlled runs.
 class ctrlStruct(object):
-    def __init__(self, network, parameters, write_file):
+    def __init__(self, network: basicRunDORA.runDORA, parameters: dict, write_file):
         self.run_order = parameters["run_order"]
         self.parameters = parameters
         self.network = network
