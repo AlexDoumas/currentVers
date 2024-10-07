@@ -3139,18 +3139,19 @@ def retrieve_tokens(memory, bias_retrieval_analogs, use_relative_act):
     # Otherwise, default to no bias (myPs, RBs, and POs stand some odds of being retrieved
     # regardless of their interconnectivity (of course, if a token is retrieved,
     # all tokens below it that the token is connected to are also retrieved)).
-    if use_relative_act:
-        # retrieve using relative activation of propositions.
-        if bias_retrieval_analogs:
-            # retrieve whole analogs. Create a normalised retrieval score for each analog
-            # (i.e., analog.total_act/analog.num_units), and make a list of all analog activations.
-            analog_activation_list = []
-            for analog in memory.analogs:
-                # make sure analog has a .total_act and .num_units > 0.
-                if analog.total_act > 0 and analog.num_units > 0:
-                    # calculate analog.normalised_retrieval_act and add that to sum_normalised_analogs.
-                    analog.normalised_retrieval_act = analog.total_act / analog.num_units
-                    analog_activation_list.append(analog.normalised_retrieval_act)
+    if bias_retrieval_analogs:
+        # retrieve whole analogs. Create a normalised retrieval score for each analog
+        # (i.e., analog.total_act/analog.num_units), and make a list of all analog activations.
+        analog_activation_list = []
+        for analog in memory.analogs:
+            # make sure analog has a .total_act and .num_units > 0.
+            if analog.total_act > 0 and analog.num_units > 0:
+                analog.sum_num_units() # TODO: Alex, check please. New addition for the relative-act case.
+                # calculate analog.normalised_retrieval_act and add that to sum_normalised_analogs.
+                analog.normalised_retrieval_act = analog.total_act / analog.num_units
+                analog_activation_list.append(analog.normalised_retrieval_act)
+
+        if use_relative_act:
             # retrieve analogs with a probability calculated as a function of the ratio of
             # the specific analog's normalised activation to the average normalised activation of
             # all active analogs. Find the average and highest normalised activation for analogs.
@@ -3164,87 +3165,55 @@ def retrieve_tokens(memory, bias_retrieval_analogs, use_relative_act):
                     analog.normalised_retrieval_act = 1 / (
                         1 + math.exp(10 * (analog.normalised_retrieval_act - avg_analog_norm_act))
                     )
-            # get the sum of all transformed noralised analog activations.
-            sum_analog_norm_act = sum(analog_activation_list)
-            # retrieve analogs using the Luce choice rule appled to transformed activations.
-            for analog in memory.analogs:
-                # if analog has a .total_act and .num_units > 0, then calculate the retrieve_prob.
-                if analog.total_act > 0 and analog.num_units > 0:
-                    retrieve_prob = analog.normalised_retrieval_act / sum_analog_norm_act
-                    randomNum = random.random()
-                    if retrieve_prob >= randomNum:
-                        # retrieve the analog and all it's tokens.
-                        retrieve_analog_contents(analog)
+
+        # get the sum of all analog activations.
+        # TODO: in the case of use_relative_act, should we be summing over the
+        # transformed activations which we just calculated?
+        # currently, prior functionality is preserved.
+        sum_normalised_analogs = np.sum(analog_activation_list)
+
+        # retrieve analogs using the Luce choice axiom.
+        for analog in memory.analogs:
+            # if analog has a .total_act and .num_units > 0, then calculate the retrieve_prob
+            # via Luce choice.
+            if analog.total_act > 0 and analog.num_units > 0:
+                retrieve_prob = analog.normalised_retrieval_act / sum_normalised_analogs
+                randomNum = random.random()
+                if retrieve_prob >= randomNum:  # / 1.5: # ekaterina
+                    # retrieve the analog and all it's tokens.
+                    retrieve_analog_contents(analog)
+
     else:
-        # retirieve using the old Luce choice axiom.
-        if bias_retrieval_analogs:
-            # retrieve whole analogs. Create a normalised retrieval score for each analog
-            # (i.e., analog.total_act/analog.num_units) and sum up all normalised retrieval
-            # scores for each analog in memory.
-            sum_normalised_analogs = 0.0
-            for analog in memory.analogs:
-                # make sure analog has a .total_act and .num_units > 0.
-                if analog.total_act > 0 and analog.num_units > 0:
-                    # calculate my num_units.
-                    analog.sum_num_units()
-                    # calculate analog.normalised_retrieval_act and
-                    # add that to sum_normalised_analogs.
-                    analog.normalised_retrieval_act = analog.total_act / analog.num_units
-                    sum_normalised_analogs += analog.normalised_retrieval_act
-            # retrieve analogs using the Luce choice axiom.
-            for analog in memory.analogs:
-                # if analog has a .total_act and .num_units > 0, then calculate the retrieve_prob
-                # via Luce choice.
-                if analog.total_act > 0 and analog.num_units > 0:
-                    retrieve_prob = analog.normalised_retrieval_act / sum_normalised_analogs
-                    randomNum = random.random()
-                    if retrieve_prob >= randomNum:  # / 1.5: # ekaterina
-                        # retrieve the analog and all it's tokens.
-                        retrieve_analog_contents(analog)
-        else:
-            # get sum of all max_acts of all P, RB and P units in memorySet.
-            P_sum, RB_sum, PO_sum = 0.0, 0.0, 0.0
-            for myP in memory.Ps:
-                P_sum += myP.max_act
-            for myRB in memory.RBs:
-                RB_sum += myRB.max_act
-            for myPO in memory.POs:
-                PO_sum += myPO.max_act
-            # for each P, RB, and PO in memorySet (i.e., NOT in driver, recipient, or newSet),
-            # retrieve it (and the proposition attached to it) into recipient according to the Luce
-            # choice rule.
-            # P units.
-            for myP in memory.Ps:
-                # make sure that the P is in memory and that P_sum > 0
-                # (so you don't get a divide by 0 error).
-                if (myP.set == "memory") and (P_sum > 0):
-                    retrieve_prob = myP.max_act / P_sum
-                    randomNum = random.random()
-                    if retrieve_prob > randomNum:
-                        # retrieve P and all units attached into recipient.
-                        myP.set = "recipient"
-                        # add the RBs.
-                        for myRB in myP.myRBs:
-                            myRB.set = "recipient"
-                            # add the POs.
-                            myRB.myPred[0].set = "recipient"
-                            # if it has an object add that object.
-                            if len(myRB.myObj) >= 1:
-                                myRB.myObj[0].set = "recipient"
-                            else:  # add it's child myP.
-                                myRB.myChildP[0].set = "recipient"
-            # RB units.
-            for myRB in memory.RBs:
-                # make sure that the RB is in memory and that RB_sum > 0 (so you don't get a divide by 0 error).
-                if (myRB.set == "memory") and (RB_sum > 0):
-                    retrieve_prob = myRB.max_act / RB_sum
-                    randomNum = random.random()
-                    if retrieve_prob > randomNum:
-                        # retrieve RB and all units attached into recipient.
+        if use_relative_act:
+            # TODO!
+            raise NotImplementedError(
+                "Relative activation is not implemented for non-analog retrieval."
+            )
+
+        # get sum of all max_acts of all P, RB and P units in memorySet.
+        P_sum, RB_sum, PO_sum = 0.0, 0.0, 0.0
+        for myP in memory.Ps:
+            P_sum += myP.max_act
+        for myRB in memory.RBs:
+            RB_sum += myRB.max_act
+        for myPO in memory.POs:
+            PO_sum += myPO.max_act
+        # for each P, RB, and PO in memorySet (i.e., NOT in driver, recipient, or newSet),
+        # retrieve it (and the proposition attached to it) into recipient according to the Luce
+        # choice rule.
+        # P units.
+        for myP in memory.Ps:
+            # make sure that the P is in memory and that P_sum > 0
+            # (so you don't get a divide by 0 error).
+            if (myP.set == "memory") and (P_sum > 0):
+                retrieve_prob = myP.max_act / P_sum
+                randomNum = random.random()
+                if retrieve_prob > randomNum:
+                    # retrieve P and all units attached into recipient.
+                    myP.set = "recipient"
+                    # add the RBs.
+                    for myRB in myP.myRBs:
                         myRB.set = "recipient"
-                        # add the Ps.
-                        for myP in myRB.myParentPs:
-                            myP.set = "recipient"
                         # add the POs.
                         myRB.myPred[0].set = "recipient"
                         # if it has an object add that object.
@@ -3252,22 +3221,41 @@ def retrieve_tokens(memory, bias_retrieval_analogs, use_relative_act):
                             myRB.myObj[0].set = "recipient"
                         else:  # add it's child myP.
                             myRB.myChildP[0].set = "recipient"
-            # PO units.
-            for myPO in memory.POs:
-                # make sure that the PO is in memory and that PO_sum > 0 (so you don't get a divide by 0 error).
-                if (myPO.set == "memory") and (PO_sum > 0):
-                    retrieve_prob = myPO.max_act / PO_sum
-                    randomNum = random.random()
-                    if retrieve_prob > randomNum:
-                        # retrieve PO and all units attached into recipient.
-                        myPO.set = "recipient"
-                        memory.recipient.POs.append(myPO)
-                        # add the RBs.
-                        for myRB in myPO.myRBs:
-                            myRB.set = "recipient"
-                            # add the RB's P unit if it exists.
-                            if len(myRB.myParentPs) > 0:
-                                myRB.myParentPs[0].set = "recipient"
+        # RB units.
+        for myRB in memory.RBs:
+            # make sure that the RB is in memory and that RB_sum > 0 (so you don't get a divide by 0 error).
+            if (myRB.set == "memory") and (RB_sum > 0):
+                retrieve_prob = myRB.max_act / RB_sum
+                randomNum = random.random()
+                if retrieve_prob > randomNum:
+                    # retrieve RB and all units attached into recipient.
+                    myRB.set = "recipient"
+                    # add the Ps.
+                    for myP in myRB.myParentPs:
+                        myP.set = "recipient"
+                    # add the POs.
+                    myRB.myPred[0].set = "recipient"
+                    # if it has an object add that object.
+                    if len(myRB.myObj) >= 1:
+                        myRB.myObj[0].set = "recipient"
+                    else:  # add it's child myP.
+                        myRB.myChildP[0].set = "recipient"
+        # PO units.
+        for myPO in memory.POs:
+            # make sure that the PO is in memory and that PO_sum > 0 (so you don't get a divide by 0 error).
+            if (myPO.set == "memory") and (PO_sum > 0):
+                retrieve_prob = myPO.max_act / PO_sum
+                randomNum = random.random()
+                if retrieve_prob > randomNum:
+                    # retrieve PO and all units attached into recipient.
+                    myPO.set = "recipient"
+                    memory.recipient.POs.append(myPO)
+                    # add the RBs.
+                    for myRB in myPO.myRBs:
+                        myRB.set = "recipient"
+                        # add the RB's P unit if it exists.
+                        if len(myRB.myParentPs) > 0:
+                            myRB.myParentPs[0].set = "recipient"
     # returns.
     return memory
 
