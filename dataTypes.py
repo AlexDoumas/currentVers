@@ -244,7 +244,7 @@ class PUnit(TokenUnit):
         # from other P units in child mode.
         for myP in memory.recipient.Ps:
             if myP.mode == -1 and myP is not self:
-                self.lateral_input = myP.act*lateral_input_level
+                self.lateral_input -= myP.act*lateral_input_level
         # if in DORA mode, from PO units not in the same RB as me, and from PO units in the same RB as me*3.
         for myPO in memory.recipient.POs:
             if asDORA:
