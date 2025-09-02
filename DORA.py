@@ -79,7 +79,7 @@ class MainMenu(object):
         self.path_name = path_name
         self.network = None  # initialize the network to empty; filled with runDORA object later.
         # self.memory = basicRunDORA.dataTypes.memorySet()  # initialize an empty memorySet. *****NOTE: I don't think that you actuall need this field. It is subsumed for the purposes of running the model by the .network.memory object (i.e., you do all the work with the .network object, and the .network object has it's own version of the memory object).*****
-        self.file = open("conceptarc_dora_sims.py", "r")
+        self.file = open("screens.py", "r")
         self.write_file = None  # file I should write data to.
         self.sym = None
         self.parameters = parameters
