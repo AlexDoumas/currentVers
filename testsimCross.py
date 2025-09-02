@@ -1,4 +1,4 @@
-simType = "sim_file"
+simType = "sym_file"
 symProps = [
     {
         "name": "lovesMaryTom",
