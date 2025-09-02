@@ -43,7 +43,7 @@ parameters = {
     # c=clear results, cl=limited clear results (just inferences and newSet),
     # wdr= write the current state of the driver and recipient to output file,
     # wn=write current state of the network to output file).
-    "run_order": ["cdr", "selectTokens", "r", "wp", "m", "p", "s", "f", "c"],
+    "run_order": ["cdr", "selectTokens", "r", "wp", "m", "p", "s", "f", "co", "c"],
     "run_cyles": 5000,
     "write_on_iteration": 100,
     "firingOrderRule": "random",
@@ -56,7 +56,7 @@ parameters = {
     "lateral_input_level": 1,
     "screen_width": 1200,
     "screen_height": 700,
-    "doGUI": True,
+    "doGUI": False,
     "testing": True,
     "GUI_update_rate": 1,
     "starting_iteration": 0,
@@ -79,7 +79,7 @@ class MainMenu(object):
         self.path_name = path_name
         self.network = None  # initialize the network to empty; filled with runDORA object later.
         # self.memory = basicRunDORA.dataTypes.memorySet()  # initialize an empty memorySet. *****NOTE: I don't think that you actuall need this field. It is subsumed for the purposes of running the model by the .network.memory object (i.e., you do all the work with the .network object, and the .network object has it's own version of the memory object).*****
-        self.file = open("screens.py", "r")
+        self.file = open("conceptarc_dora_object_sims.py", "r")
         self.write_file = None  # file I should write data to.
         self.sym = None
         self.parameters = parameters
@@ -905,6 +905,7 @@ class ctrlStruct(object):
                             self.network.memory, analog_num, "analog", "driver"
                         )
                         # if there are only objects, just grab 2.
+                        # TODO Alex: make this optional
                         if len(self.network.memory.driver.RBs) == 0:
                             POs = [PO for PO in self.network.memory.POs if PO.set == "driver"]
                             non_driver_POs = []
