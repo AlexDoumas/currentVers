@@ -4,7 +4,7 @@
 run_on_iphone = False
 
 # imports.
-import random, copy, json
+import random, copy, json, pickle
 import numpy as np
 import buildNetwork
 import basicRunDORA
@@ -31,8 +31,8 @@ parameters = {
     # selectTokens=select token units from memory to place in the driver
     #   (the selection of tokens is by analog (i.e., a specific analog is chosen,
     #   and all tokens from that analog are placed in the driver)),
-    # selectP=select a P at random from memory to place in the driver, r=retrieval, m=map,
-    # p=predicate, f=form new relation, g=relational generalization, s=schema induction,
+    # selectP=select a P at random from memory to place in the driver, 'r'f=retrieval, 'm'=map,
+    # 'p'=predicate, 'f'=form new relation, 'g'=relational generalization, 's'=schema induction,
     # 'b'=between group entropy ops, 'w'=within group entropy ops,
     # 'wp'=within group entropy ops for preds only,
     #   (NOTE: b, w, and wp operations are newer to the theory and therefore listed after the old
@@ -45,7 +45,9 @@ parameters = {
     # wn=write current state of the network to output file).
     "run_order": ["cdr", "selectTokens", "r", "wp", "m", "p", "s", "f", "c"],
     "run_cyles": 5000,
+    "write_network_state": True, 
     "write_on_iteration": 100,
+    "write_unit_states": True, # flag to write activation of all units in the network to file at each iteration. 
     "firingOrderRule": "random",
     "strategic_mapping": False,
     "ignore_object_semantics": False,
@@ -53,11 +55,16 @@ parameters = {
     "mag_decimal_precision": 0,
     "exemplar_memory": False,
     "recent_analog_bias": True,
+    "driver_bias_on": True, # bias for the size of elements retrieved into driver. 
+    "driver_bias_start_size": 2, # starting size of driver bias. 
+    "turn_driver_bias_off": False, # turn the rel_bias off after some amount of learning. 
+    "iters_of_driver_bias": 1000, # how many iterations before rel_bias should be turned off (assuming 'turn_rel_bias_off' is True). 
+    "turn_driver_bias_off_size": 4, # the size the driver_bias should get to before going off. 
     "lateral_input_level": 1,
     "screen_width": 1200,
     "screen_height": 700,
     "doGUI": True,
-    "testing": True,
+    #"testing": False, # no longer used. 
     "GUI_update_rate": 1,
     "starting_iteration": 0,
     "tokenize": False,
@@ -139,7 +146,7 @@ class MainMenu(object):
             # clear the file from memory.
             self.file = None
         elif self.state.upper() == "S":
-            # same the current state of memory.
+            # save the current state of memory.
             new_name = input("By what name will you save the current state?>")
             new_name += ".py"
             # use the .write_memory_to_symfile() funciton from basicRunDORA.
@@ -327,14 +334,29 @@ class RunMenu(object):
                 ctrlStructure = ctrlStruct(self.network, self.parameters, self.write_file)
                 for cycle in range(self.parameters["run_cyles"]):
                     ctrlStructure.runCycle(cycle)
-                    # if you are on a run cycle mod write_on_iteration, then write to file.
-                    if (cycle + 1) % self.parameters["write_on_iteration"] == 0:
-                        write_file_name = "batch_run" + str(
-                            cycle + 1 + self.parameters["starting_iteration"]
-                        )
-                        basicRunDORA.write_memory_to_symfile(
-                            ctrlStructure.network.memory, write_file_name
-                        )
+                    # if you're supposed to write the network state to file. 
+                    if self.parameters["write_network_state"] == True:
+                        # if you are on a run cycle mod write_on_iteration, then write to file.
+                        if (cycle + 1) % self.parameters["write_on_iteration"] == 0:
+                            write_file_name = "batch_run" + str(
+                                cycle + 1 + self.parameters["starting_iteration"]
+                            )
+                            basicRunDORA.write_memory_to_symfile(
+                                ctrlStructure.network.memory, write_file_name
+                            )
+                    # if you're supposed to write the unit states and you're on a write cycle. 
+                    if self.parameters["write_unit_states"] == True and (cycle + 1) % self.parameters["write_on_iteration"] == 0:
+                        # load the old pickled file as a dict. 
+                        
+                        # merge the old dict with the current act_dict. 
+                        xxx
+                        # save the updated unit states act_dict to a file.
+                        xxx
+                        write_pickle_name = "batch_pickle" + str(cycle + 1 + self.parameters["starting_iteration"]) + ".pkl"
+                        with open(write_pickle_name, 'wb') as f:
+                            pickle.dump(ctrlStructure.network.act_dict, f)
+                        # reset the act_dict. 
+                        ctrlStructure.network.act_dict = reset_act_dict(ctrlStructure.network.act_dict{'iteration'})
                 # and update network based on ctrlStructure.memory.
                 self.network = ctrlStructure.network
             else:  # run in user controlled mode.
@@ -904,14 +926,23 @@ class ctrlStruct(object):
                         self.network.memory = basicRunDORA.add_tokens_to_set(
                             self.network.memory, analog_num, "analog", "driver"
                         )
-                        # if there are only objects, just grab 2.
-                        if len(self.network.memory.driver.RBs) == 0:
+                        # if there are only objects, and self.parameters["driver_bias_on"] is true, then just grab "driver_bias_start_size" items.
+                        if len(self.network.memory.driver.RBs) == 0 and self.parameters["driver_bias_on"] == True:
                             POs = [PO for PO in self.network.memory.POs if PO.set == "driver"]
                             non_driver_POs = []
-                            if len(POs) >= 3:
-                                non_driver_POs = random.sample(POs, len(POs) - 2)
+                            if len(POs) >= self.parameters['driver_bias_start_size']:
+                                non_driver_POs = random.sample(POs, len(POs) - self.parameters['driver_bias_start_size'])
                             for myPO in non_driver_POs:
                                 myPO.set = "memory"
+                        # if self.parameters["driver_bias_on"] is true, check whether turn_driver_bias_off is True, and if so, 
+                        if self.parameters["driver_bias_on"]:
+                            if self.parameters["turn_driver_bias_off"]:
+                                # if the cycle is mod self.parameters["iters_of_driver_bias"] is 0, then increment self.parameters["driver_bias_start_size"] by 1.
+                                if cycle%self.parameters["iters_of_driver_bias"] == 0:
+                                    self.parameters["driver_bias_start_size"] += 1
+                                # if self.parameters["driver_bias_start_size"] is greater or equal to self.parameters["turn_driver_bias_off_size"], then set self.parameters["driver_bias_on"] to False. 
+                                if self.parameters["driver_bias_start_size"] >= self.parameters["turn_driver_bias_off_size"]:
+                                    self.parameters["driver_bias_on"] = False
                 else:  # there is no bias towards recent items.
                     for i in range(num_analogs):
                         analog = random.choice(self.network.memory.analogs)
@@ -1297,6 +1328,11 @@ def swap_driver_recipient(memory):
     memory = basicRunDORA.findDriverRecipient(memory)
     # return memory.
     return memory
+
+# function to reset the act_dict to empty. It returns an emptied act_dict structure with current iteration information.  
+def reset_act_dict(iteration):
+    act_dict {'iteration': iteration}
+    return act_dict
 
 
 ##############################################################################

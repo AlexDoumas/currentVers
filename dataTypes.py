@@ -73,7 +73,7 @@ class TokenUnit(object):
         self.inhibitor_act = 0.0
 
 
-class Groups(TokenUnit):
+class GroupUnit(TokenUnit):
     def __init__(self, my_name, my_set, analog, inferred_now, myanalog, myGroupLayer):
         TokenUnit.__init__(self, my_name, my_set, analog, inferred_now, myanalog) # default init for all tokens.
         self.my_type = 'Group'
@@ -81,7 +81,7 @@ class Groups(TokenUnit):
         self.myParentGroups = [] # connections to Groups above me. Initialized to empty.
         self.myChildGroups = [] # connections to Groups below me. Initialized to empty.
         self.myPs = [] # Ps to which I am connected. Initialized to empty.
-        self.myRBs = [] # RBs to which I am connected. Initialized to empty. For Groups talking single-place pred structures as arguments.
+        #self.myRBs = [] # RBs to which I am connected. Initialized to empty. For Groups talking single-place pred structures as arguments.
         self.mySemantics = [] # Links to my semantic units: Inialized to empty.
         self.inhibitorThreshold = 'NA' ######### NOTE: THIS MIGHT NEED TO BE CHANGED LATER.
 
@@ -95,21 +95,56 @@ class Groups(TokenUnit):
     def update_input_driver(self, memory, asDORA):
         # sources of input:
         # Exitatory: td (Groups above me), bu (my Ps or Groups below me).
-        # Inhibitory: lateral (other Group units in same layer as me*3), inhibitor.
-        pass
+        # Inhibitory: lateral (other Group units in same layer as me*3), inhibitor and my inhibitor.
+        # get my td input. 
+        # my td input comes from any groups above me (leave empty for now).
+        # get bu input. My bu input comes from P units below me, my child groups, and my semantics. 
+        for myP in self.myPs: 
+            self.bu_input += myP.act
+        for mygroup in self.myChildGroups:
+            self.bu_input += mygroup.act
+        for mySemantic in self.mySemantics: 
+            self.bu_input += mySemantic.act
+        # get td input. From groups and from parent groups. 
+        for mygroup in self.myParentGroups:
+            self.td_input += mygroup.act
+        # get lateral inhibition from groups in my layer that are not me, and from my inhbitior. 
+        for mygroup in memory.driver.Groups:
+            if mygroup is not self and mygroup.myGroupLayer == self.myGroupLayer:
+                self.lateral_input -= mygroup.act*3
+        # from my inhibitor.
+        self.lateral_input -= self.inhibitor_act*10
 
     def update_input_recipient(self, memory, asDORA, phase_set, lateral_input_level):
         # sources of input:
         # Exitatory: td (Groups above me), bu (my Ps or Groups below me, my semantics), mapping input.
         # Inhibitory: lateral (other Group units in same layer as me*3), inhibitor.
-        pass
+         # get my td input. 
+        # my td input comes from any groups above me (leave empty for now).
+        # get bu input. 
+        # my bu input comes from P units below me. 
+        for myP in self.myPs: 
+            self.bu_input += myP.act
+        for mygroup in self.myChildGroups:
+            self.bu_input += mygroup.act
+        for mySemantic in self.mySemantics: 
+            self.bu_input += mySemantic.act
+        # get td input. From groups and from parent groups. 
+        for mygroup in self.myParentGroups:
+            self.td_input += mygroup.act
+        # get lateral inhibition from groups in my layer that are not me, and from my inhbitior. 
+        for mygroup in memory.driver.Groups:
+            if mygroup is not self and mygroup.myGroupLayer == self.myGroupLayer:
+                self.lateral_input -= mygroup.act*3
+        # from my inhibitor.
+        self.lateral_input -= self.inhibitor_act*10
 
 
 class PUnit(TokenUnit):
     def __init__(self, my_name, my_set, analog, inferred_now, myanalog):
         TokenUnit.__init__(self, my_name, my_set, analog, inferred_now, myanalog) # default init for all tokens.
         self.my_type = 'P'
-        self.myRBs = [] # connections to my RBs: Initialized to empty.
+        self.myRBs = [] # connections to my child RBs: Initialized to empty.
         self.myParentRBs = [] # RBs to which I am an argument: Initialized to empty.
         self.myGroups = [] # Groups I am a part of: initialized to empty.
         self.mode = 0 # as default mode is neutral.
@@ -147,18 +182,20 @@ class PUnit(TokenUnit):
         # Exitatory: td (my Groups), bu (my RBs).
         # Inhibitory: lateral (other P units in parent mode*3), inhibitor.
         # get my td_input
-        # my td_input comes from my RBs.
+        # my td_input comes from my groups.
         for Group in self.myGroups:
             self.td_input += Group.act
         # get my bu_input
         # my bu_input comes from my RBs.
         for myRB in self.myRBs:
             self.bu_input += myRB.act
-        # get my lateral_input (comes from other Ps in parent mode).
+        # get my lateral_input (comes from other Ps in parent mode) and from my inhibitor.
         for myP in memory.driver.Ps:
             # if the P is in parent and is not me, then add inhibitory input.
             if myP.mode == 1 and myP is not self:
                 self.lateral_input -= myP.act*3
+        # and from my inhibitor.
+        self.lateral_input -= self.inhibitor_act*10
 
     def update_input_driver_child(self, memory, asDORA):
         # P units in child mode:
@@ -172,7 +209,7 @@ class PUnit(TokenUnit):
         for Group in self.myGroups:
             self.td_input += Group.act
         # get my bu imput from my semantics (not currently implemented).
-        # get lateral inhibition from other child P units and other POs not connected to my myRB.
+        # get lateral inhibition from other child P units and other POs not connected to my myRB and from my inhibitor.
         for myP in memory.driver.Ps:
             if myP.mode == -1 and myP is not self:
                 self.lateral_input -= myP.act
@@ -192,6 +229,8 @@ class PUnit(TokenUnit):
                     # if same_RB is false, get inhibition from the myPO.
                     if not same_RB:
                         self.lateral_input -= myPO.act
+        # get lateral inhibition from my inhibitor.
+        self.lateral_input -= self.inhibitor_act*10
 
     def update_input_recipient_parent(self, memory, asDORA, phase_set, lateral_input_level):
         # P units in parent mode:
@@ -213,8 +252,7 @@ class PUnit(TokenUnit):
         for mappingConnection in self.mappingConnections:
             self.map_input += (3*mappingConnection.weight*mappingConnection.driverToken.act) - (self.max_map*mappingConnection.driverToken.act) - (mappingConnection.driverToken.max_map*mappingConnection.driverToken.act)
         # get my inhibitory input.
-        # lateral.
-        # from other P units.
+        # lateral (from other P units).
         for myP in memory.recipient.Ps:
             # get inhibition from the P as long as it is in parent and is not me:
             if myP.mode == 1 and myP is not self:
@@ -240,12 +278,11 @@ class PUnit(TokenUnit):
         for mappingConnection in self.mappingConnections:
             self.map_input += ((3*mappingConnection.weight*mappingConnection.driverToken.act) - (self.max_map*mappingConnection.driverToken.act) - (mappingConnection.driverToken.max_map*mappingConnection.driverToken.act))
         # get inhibitory input.
-        # lateral input.
-        # from other P units in child mode.
+        # lateral (from other P units in child mode).
         for myP in memory.recipient.Ps:
             if myP.mode == -1 and myP is not self:
                 self.lateral_input -= myP.act*lateral_input_level
-        # if in DORA mode, from PO units not in the same RB as me, and from PO units in the same RB as me*3.
+        # if in DORA mode, from PO units not in the same RB as me, and from PO units in the same RB as me*3, and from my inhibitor.
         for myPO in memory.recipient.POs:
             if asDORA:
                 # make sure that the PO is not connected to the same RB as me.
@@ -261,6 +298,8 @@ class PUnit(TokenUnit):
             else: # if I'm in LISA mode.
                 if myPO.predOrObj == 0: # i.e., if the PO is an object.
                     self.lateral_input -= myPO.act
+        # get lateral inhibition from my inhibitor.
+        self.lateral_input -= self.inhibitor_act*10
 
 
 class RBUnit(TokenUnit):
@@ -270,7 +309,7 @@ class RBUnit(TokenUnit):
         self.myParentPs = [] # eventually connections to my P units: Initialized to None.
         self.myPred = [] # eventually connections to my pred unit: Initialized to None.
         self.myObj = [] # eventually connections to my object unit: Initialized to None.
-        self.myChildP = [] # eventually connections to my child P unit: Initialized to None.
+        self.myChildP = [] # eventually connections to my child P unit: Initialized to None. 
         self.timesFired = 0.0
         self.inhibitorThreshold = 220 ######### NOTE: THIS MIGHT NEED TO BE CHANGED LATER.
 
@@ -509,6 +548,7 @@ class Semantic(object):
         self.max_sem_input = 0.0 # the maximum input to any semantic unit in the network.
         self.act = 0.0
         self.myPOs = [] # initialize to empty. Later it will have Links to POs.
+        self.myGroups = [] # initialize to empty. Later it will have Links to groups.
         self.semConnect = [] # where links to other semantics are kept. Initialized to None. # ekaterina changed 'None' to empty list
         self.semConnectWeights = [0.0] * 50 # the weights of the semantic-ho_sem connections; weights are stored at the indices that correspond to the semantic in the .semConnect list # ekaterina
 
@@ -531,7 +571,14 @@ class Semantic(object):
                             self.myinput += Link.myPO.act * Link.weight
                     else:
                         self.myinput += Link.myPO.act * Link.weight
-
+        for Link in self.myGroups: 
+            # make sure that I'm not getting input from newSet groups, and that I'm not getting input from memory units during retrieval if ignore_memory_semantics == True.
+            if Link.myGroups.set != 'newSet':
+                if not ignore_memory_semantics:
+                    self.myinput += Link.myPO.act * Link.weight
+                else: 
+                    if Link.myGroups.set != 'memory':
+                        self.myinput += Link.myGroups.act * Link.weight
         # ekaterina: to activate connections between higher order semantics and regular semantics for the retrieval purposes
         if retrieval_license:
             if self.myinput != 0: # if a semantic was activated by a PO in the previous segment
@@ -565,9 +612,10 @@ class Semantic(object):
 
 
 class Link(object):
-    def __init__(self, my_PO, my_P, my_sem, weight):
+    def __init__(self, my_PO, my_P, my_group, my_sem, weight):
         self.myPO = my_PO
         self.myP = my_P
+        self.myGroup = my_group
         self.mySemantic = my_sem
         self.weight = weight
 

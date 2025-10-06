@@ -20,7 +20,7 @@ def load_sym(file_name):
 
 # to load a sym file.
 symstring = load_sym('rule_transfer_symFile.py')
-exec symstring
+exec(symstring)
 
 # initialise memory. 
 memory = buildNetwork.initializeMemorySet()
@@ -41,6 +41,12 @@ basicRunDORA.swap_driverRecipient(network.memory)
 network.memory = basicRunDORA.findDriverRecipient(network.memory)
 
 # DORA operations run operatons. 
+
+network.create_firing_order()
+# You can set the firing order rule via: 
+network.firingOrderRule = ''
+# You can also set the firing order manually. 
+network.firingOrder = [self.memory.driver.RBs[...]]
 network.do_retrieval()
 network.do_map()
 network.do_entropy_ops_between()

@@ -58,12 +58,15 @@ class runDORA(object):
             self.doGUI = False
         else:
             self.doGUI = parameters["doGUI"]
+        self.write_unit_states = parameters["write_unit_states"]
+        self.act_dict = {'iteration': 0} # empty dict for writing activation states if write_unit_states is True. 
         self.screen = 0
         self.GUI_information = None  # initialize to None.
         self.screen_width = parameters["screen_width"]
         self.screen_height = parameters["screen_height"]
         self.GUI_update_rate = parameters["GUI_update_rate"]
         self.starting_iteration = parameters["starting_iteration"]
+        self.write_unit_states = parameters["write_unit_states"]
         self.num_phase_sets_to_run = None
         self.count_by_RBs = None  # initialize to None.
         self.local_inhibitor_fired = False  # initialize to False.
@@ -109,6 +112,7 @@ class runDORA(object):
     def create_firing_order(self):
         if len(self.memory.driver.RBs) > 0:
             self.count_by_RBs = True
+            self.firingOrder = makeFiringOrder(self.memory, self.firingOrderRule)
         else:
             self.count_by_RBs = False
             # and randomly assign the PO firing order.
@@ -116,8 +120,8 @@ class runDORA(object):
             for myPO in self.memory.driver.POs:
                 self.firingOrder.append(myPO)
             random.shuffle(self.firingOrder)
-        if self.count_by_RBs:
-            self.firingOrder = makeFiringOrder(self.memory, self.firingOrderRule)
+        #if self.count_by_RBs:
+        #    self.firingOrder = makeFiringOrder(self.memory, self.firingOrderRule)
 
     # function to perform steps 1-3 above.
     def do_1_to_3(self, mapping):
@@ -800,19 +804,18 @@ class runDORA(object):
                                 myRB.myanalog = new_analog
                                 # remove the RB from old_analog.
                                 old_analog.myRBs.remove(myRB)
-                                # FOR DEBUGGING: I'm getting an odd error with looking for a non-existent object on every 4 runs or so. Throw up a try/except and see if you can catch the error.
+                                # FOR DEBUGGING: I'm getting an odd error with looking for a non-existent object on every 4 runs or so. Throw up a try/except and see if you can catch the error. 
+                                # NOTE: I can't seem to reproduce this error anymore, but I'm leaving this catch in just in case it shows up again (10/9/25). 
                                 try:
                                     old_analog.myPOs.remove(myRB.myObj[0])
                                 except:
                                     pdb.set_trace()
-                                ########################################################################
-                                # FOR DEBUGGING: You've put all these operations in this block and commented them out above (see that the below commands are all commented out in the above 15 or so lines). You might want to delete this block and uncomment out the operations above when you fix the bug that your above try/except statement is catching.
+                                # add the POs to the new_analog (and vise versa). 
                                 new_analog.myPOs.append(myRB.myPred[0])
                                 myRB.myPred[0].myanalog = new_analog
                                 new_analog.myPOs.append(myRB.myObj[0])
                                 myRB.myObj[0].myanalog = new_analog
                                 old_analog.myPOs.remove(myRB.myPred[0])
-                                ########################################################################
                                 # keep a list of all items that have served as old_analogs.
                                 if old_analog not in old_analogs:
                                     old_analogs.append(old_analog)
@@ -826,9 +829,7 @@ class runDORA(object):
                             # delete the new P unit.
                             del self.memory.Ps[-1]
                     # run post_phase_set_operations.
-                    self.post_phase_set_operations(
-                        retrieval_license=False, map_license=False, inferred_new_P=True
-                    )
+                    self.post_phase_set_operations(False, False, inferred_new_P)
 
     def do_schematization(self):
         # Change asDORA mode to asDORA = True.
@@ -875,6 +876,7 @@ class runDORA(object):
         # you're done with schematization, so switch back to oldasDORA state.
         self.asDORA = oldasDORA
         # FOR DEBUGGING: check if an RB has been made without two POs.
+        # NOTE: I can't seem to reproduce this error, but I'm leaving this catch in just in case (10/9/25). 
         for myRB in self.memory.newSet.RBs:
             if (len(myRB.myPred) < 1) and (len(myRB.myObj) < 1):
                 pdb.set_trace()
@@ -885,6 +887,8 @@ class runDORA(object):
         self.asDORA = True
         # Only done with RBs, so only do if count_by_RBs is True.
         if self.count_by_RBs:
+            # FOR DEBUGGING: got a weird error where the driver and recipient PO were the same. 
+            # NOTE: I can't seem to reproduce this error, but I'm leaving this catch in just in case (10/9/25). 
             if self.memory.driver.POs[0].myanalog is self.memory.recipient.POs[0].myanalog:
                 pdb.set_trace()
             # find the analog in which all mapping driver units live.
@@ -896,6 +900,8 @@ class runDORA(object):
             self.do_1_to_3(mapping=False)
             phase_sets = 1
             for phase_set in range(phase_sets):
+                # FOR DEBUGGING: got a weird error where the driver and recipient PO were the same. 
+                # NOTE: I can't seem to reproduce this error, but I'm leaving this catch in just in case (10/9/25). 
                 if self.memory.driver.POs[0].myanalog is self.memory.recipient.POs[0].myanalog:
                     pdb.set_trace()
                 # fire all RBs in the driver analog that contains mapped elements.
@@ -1308,7 +1314,7 @@ class runDORA(object):
         ignore_object_semantics=False,
         ignore_memory_semantics=False,
         retrieval_license=False,
-    ):  # ekaterina: added retrieval_license
+        ):  # ekaterina: added retrieval_license
         # initialize the input to all tokens and semantic units.
         self.memory = initialize_input(self.memory)
         # 4.3.2) Update modes of all P units in the driver and the recipient.
@@ -1358,12 +1364,15 @@ class runDORA(object):
             self.ignore_object_semantics,
         )
         self.memory = update_newSet_inputs(self.memory)
-        # print("I've just updated the input to all recipient units...")
-        # DORA_GUI.full_term_state_display(self.memory)
-        # 4.3.10) Update activations of all units in the driver, recipient, and newSet, and all semanticss.
+        # 4.3.10) Update activations of all units in the driver, recipient, and newSet, and all semantics.
         self.memory = update_activations_run(
             self.memory, self.gamma, self.delta, self.HebbBias, phase_set
         )
+        # if write_unit_states is True, then write activations of all units in the network to file. 
+        if self.write_unit_states == True:
+            # run the collect_acts function. 
+            self.act_dict = collect_acts(self.memory, self.act_dict)
+            
 
     # function to fire the local inhibitor if necessary.
     def time_step_fire_local_inhibitor(self):
@@ -1854,7 +1863,7 @@ def copy_analog_tokens(analog, new_analog, memory):
                 # make all the semantic connections for copy_pred.
                 for link in myRB.myPred[0].mySemantics:
                     # create a new link for the copy_pred.
-                    new_link = dataTypes.Link(copy_pred, None, link.mySemantic, link.weight)
+                    new_link = dataTypes.Link(copy_pred, None, None, link.mySemantic, link.weight)
                     # add the new_link to memory.Links, new_pred.semantics, and link.mySemantic.myPOs.
                     memory.Links.append(new_link)
                     copy_pred.mySemantics.append(new_link)
@@ -1884,7 +1893,7 @@ def copy_analog_tokens(analog, new_analog, memory):
                 # make all the semantic connections for copy_obj.
                 for link in myRB.myObj[0].mySemantics:
                     # create a new link for the copy_obj.
-                    new_link = dataTypes.Link(copy_obj, None, link.mySemantic, link.weight)
+                    new_link = dataTypes.Link(copy_obj, None, None, link.mySemantic, link.weight)
                     # add the new_link to memory.Links, copy_obj.semantics, and link.mySemantic.myPOs.
                     memory.Links.append(new_link)
                     copy_obj.mySemantics.append(new_link)
@@ -1922,7 +1931,7 @@ def copy_analog_tokens(analog, new_analog, memory):
                 # make all the semantic connections for copy_pred.
                 for link in myRB.myPred[0].mySemantics:
                     # create a new link for the copy_pred.
-                    new_link = dataTypes.Link(copy_pred, None, link.mySemantic, link.weight)
+                    new_link = dataTypes.Link(copy_pred, None, None, link.mySemantic, link.weight)
                     # add the new_link to memory.Links, new_pred.semantics, and link.mySemantic.myPOs.
                     memory.Links.append(new_link)
                     copy_pred.mySemantics.append(new_link)
@@ -1952,7 +1961,7 @@ def copy_analog_tokens(analog, new_analog, memory):
                 # make all the semantic connections for copy_obj.
                 for link in myRB.myObj[0].mySemantics:
                     # create a new link for the copy_obj.
-                    new_link = dataTypes.Link(copy_obj, None, link.mySemantic, link.weight)
+                    new_link = dataTypes.Link(copy_obj, None, None, link.mySemantic, link.weight)
                     # add the new_link to memory.Links, copy_obj.semantics, and link.mySemantic.myPOs.
                     memory.Links.append(new_link)
                     copy_obj.mySemantics.append(new_link)
@@ -1976,7 +1985,7 @@ def copy_analog_tokens(analog, new_analog, memory):
                 # make all the semantic connections for copy_obj.
                 for link in myPO.mySemantics:
                     # create a new link for the copy_obj.
-                    new_link = dataTypes.Link(copy_obj, None, link.mySemantic, link.weight)
+                    new_link = dataTypes.Link(copy_obj, None, None, link.mySemantic, link.weight)
                     # add the new_link to memory.Links, copy_obj.semantics, and link.mySemantic.myPOs.
                     memory.Links.append(new_link)
                     copy_obj.mySemantics.append(new_link)
@@ -3155,7 +3164,12 @@ def retrieve_tokens(memory, bias_retrieval_analogs, use_relative_act):
             # the specific analog's normalised activation to the average normalised activation of
             # all active analogs. Find the average and highest normalised activation for analogs.
             avg_analog_norm_act = np.mean(analog_activation_list)
-            high_analog_norm_act = max(analog_activation_list)
+            # NOTE: if analog_activation_list is empty, you'll get an error. That means that in memory there is nothing that has any semantics in common with the items active in the driver. 
+            try:
+                high_analog_norm_act = max(analog_activation_list)
+            except:
+                high_analog_norm_act = 0
+                print('The item in the driver has no semantics in common with anything in the recipient. Nothing is gonna get retreived.')
             avg_analog_norm_act = (high_analog_norm_act + avg_analog_norm_act) / 2
             # transform all retrieval activations using a sigmoidal function with a threshold
             # around high_analog_norm_act.
@@ -3732,11 +3746,11 @@ def attach_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
             for semantic in memory.semantics:
                 if semantic.name == "same":
                     # connect the semantic to both POs.
-                    new_link1 = dataTypes.Link(firstPO, [], semantic, 1.0)
+                    new_link1 = dataTypes.Link(firstPO, None, None, semantic, 1.0)
                     firstPO.mySemantics.append(new_link1)
                     semantic.myPOs.append(new_link1)
                     memory.Links.append(new_link1)
-                    new_link2 = dataTypes.Link(secondPO, [], semantic, 1.0)
+                    new_link2 = dataTypes.Link(secondPO, None, None, semantic, 1.0)
                     secondPO.mySemantics.append(new_link2)
                     semantic.myPOs.append(new_link2)
                     memory.Links.append(new_link2)
@@ -3749,11 +3763,11 @@ def attach_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
                 same_semantic = dataTypes.Semantic("same", "nil", None, "SDM")
                 memory.semantics.append(same_semantic)
                 # create links between POs and 'same'.
-                PO1_link = dataTypes.Link(firstPO, [], same_semantic, 1.0)
+                PO1_link = dataTypes.Link(firstPO, None, None, same_semantic, 1.0)
                 firstPO.mySemantics.append(PO1_link)
                 same_semantic.myPOs.append(PO1_link)
                 memory.Links.append(PO1_link)
-                PO2_link = dataTypes.Link(secondPO, [], same_semantic, 1.0)
+                PO2_link = dataTypes.Link(secondPO, None, None, same_semantic, 1.0)
                 secondPO.mySemantics.append(PO2_link)
                 same_semantic.myPOs.append(PO2_link)
                 memory.Links.append(PO2_link)
@@ -3765,7 +3779,7 @@ def attach_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
             for semantic in memory.semantics:
                 if semantic.name == "more":
                     # connect the sementic to firstPO.
-                    new_link = dataTypes.Link(firstPO, [], semantic, 1.0)
+                    new_link = dataTypes.Link(firstPO, None, None, semantic, 1.0)
                     firstPO.mySemantics.append(new_link)
                     semantic.myPOs.append(new_link)
                     memory.Links.append(new_link)
@@ -3776,7 +3790,7 @@ def attach_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
                         break
                 elif semantic.name == "less":
                     # connect the sementic to secondPO.
-                    new_link = dataTypes.Link(secondPO, [], semantic, 1.0)
+                    new_link = dataTypes.Link(secondPO, None, None, semantic, 1.0)
                     secondPO.mySemantics.append(new_link)
                     semantic.myPOs.append(new_link)
                     memory.Links.append(new_link)
@@ -3792,12 +3806,12 @@ def attach_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
                 memory.semantics.append(more_semantic)
                 memory.semantics.append(less_semantic)
                 # create links between firstPO and 'more'.
-                more_link = dataTypes.Link(firstPO, [], more_semantic, 1.0)
+                more_link = dataTypes.Link(firstPO, None, None, more_semantic, 1.0)
                 firstPO.mySemantics.append(more_link)
                 more_semantic.myPOs.append(more_link)
                 memory.Links.append(more_link)
                 # create links between secondPO and 'less'.
-                less_link = dataTypes.Link(secondPO, [], less_semantic, 1.0)
+                less_link = dataTypes.Link(secondPO, None, None, less_semantic, 1.0)
                 secondPO.mySemantics.append(less_link)
                 less_semantic.myPOs.append(less_link)
                 memory.Links.append(less_link)
@@ -3829,7 +3843,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
             for semantic in memory.semantics:
                 if semantic.name == "same":
                     # connect the samentic to firstPO.
-                    new_link = dataTypes.Link(firstPO, [], semantic, 1.0)
+                    new_link = dataTypes.Link(firstPO, None, None, semantic, 1.0)
                     firstPO.mySemantics.append(new_link)
                     semantic.myPOs.append(new_link)
                     memory.Links.append(new_link)
@@ -3848,7 +3862,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
             for semantic in memory.semantics:
                 if semantic.name == "same":
                     # connect the samentic to secondPO.
-                    new_link = dataTypes.Link(firstPO, [], semantic, 1.0)
+                    new_link = dataTypes.Link(firstPO, None, None, semantic, 1.0)
                     secondPO.mySemantics.append(new_link)
                     semantic.myPOs.append(new_link)
                     memory.Links.append(new_link)
@@ -3869,7 +3883,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
             for semantic in memory.semantics:
                 if semantic.name == "more":
                     # connect the samentic to firstPO.
-                    new_link = dataTypes.Link(firstPO, [], semantic, 1.0)
+                    new_link = dataTypes.Link(firstPO, None, None, semantic, 1.0)
                     firstPO.mySemantics.append(new_link)
                     semantic.myPOs.append(new_link)
                     memory.Links.append(new_link)
@@ -3889,7 +3903,7 @@ def update_mag_semantics(same_flag, firstPO, secondPO, sem_link_PO, sem_link_PO2
             for semantic in memory.semantics:
                 if semantic.name == "less":
                     # connect the samentic to secondPO.
-                    new_link = dataTypes.Link(firstPO, [], semantic, 1.0)
+                    new_link = dataTypes.Link(firstPO, None, None, semantic, 1.0)
                     secondPO.mySemantics.append(new_link)
                     semantic.myPOs.append(new_link)
                     memory.Links.append(new_link)
@@ -3938,7 +3952,7 @@ def predication_routine(memory, made_new_pred, gamma):
             # if not connected_to_newPO, then learn a connection if semantic.act > 0.
             if (not connected_to_newPO) and (semantic.act > 0):
                 # infer a new Link for new pred and active semantic.
-                new_Link = dataTypes.Link(memory.newSet.POs[-1], "nil", semantic, 0.0)
+                new_Link = dataTypes.Link(memory.newSet.POs[-1], None, None, semantic, 0.0)
                 # update the weight of the Link.
                 new_Link.weight = 1 * (semantic.act - 0) * gamma
                 # connect new Link to semantic and new pred and add Link to memory.Links.
@@ -3967,7 +3981,7 @@ def predication_routine(memory, made_new_pred, gamma):
                         # fill in the semantics.
                         for link in active_rec_PO.mySemantics:
                             # create a new link between link.mySemantic and new_obj
-                            new_link = dataTypes.Link(new_obj, None, link.mySemantic, link.weight)
+                            new_link = dataTypes.Link(new_obj, None, None, link.mySemantic, link.weight)
                             # add the new_link to memory, to new_obj, and to link.mySemantic.
                             memory.Links.append(new_link)
                             new_obj.mySemantics.append(new_link)
@@ -4138,7 +4152,7 @@ def schematization_routine(memory, gamma, phase_set_iterator):
                 # if not connected_to_newPO, then learn a connection if semantic.act > 0.
                 if (not connected_to_newSetPO) and (semantic.act > 0):
                     # infer a new Link for new PO and active semantic.
-                    new_Link = dataTypes.Link(most_active_PO.my_made_unit, "nil", semantic, 0.0)
+                    new_Link = dataTypes.Link(most_active_PO.my_made_unit, None, None, semantic, 0.0)
                     # update the weight of the Link.
                     new_Link.weight = 1 * (semantic.act - 0) * gamma
                     # connect new Link to semantic and new pred and add Link to memory.Links.
@@ -4207,7 +4221,7 @@ def rel_gen_routine(memory, gamma, recip_analog):
                     # if not connected_to_newPO, then learn a connection if semantic.act > 0.
                     if (not connected_to_newPO) and (semantic.act > 0):
                         # infer a new Link for new PO and active semantic.
-                        new_Link = dataTypes.Link(active_PO.my_made_unit, "nil", semantic, 0.0)
+                        new_Link = dataTypes.Link(active_PO.my_made_unit, None, None, semantic, 0.0)
                         # update the weight of the Link.
                         new_Link.weight = 1 * (semantic.act - 0) * gamma
                         # connect new Link to semantic and new pred and add Link to memory.Links.
@@ -4348,7 +4362,7 @@ def infer_PO(memory, new_RB, gamma):
             # if not connected_to_newPO, then learn a connection if semantic.act > 0.
             if (not connected_to_newSetPO) and (semantic.act > 0):
                 # infer a new Link for new PO and active semantic.
-                new_Link = dataTypes.Link(most_active_PO.my_made_unit, "nil", semantic, 0.0)
+                new_Link = dataTypes.Link(most_active_PO.my_made_unit, None, None, semantic, 0.0)
                 # update the weight of the Link.
                 new_Link.weight = 1 * (semantic.act - 0) * gamma
                 # connect new Link to semantic and new pred and add Link to memory.Links.
@@ -4442,7 +4456,7 @@ def compression_routine(memory, made_RB, compressed_PO, ho_sem, gamma):
             # if the semantic is not connected to the newly created PO, learn a connection if semantic.act > 0 and the semantic is not higher-order
             if (not connected_to_newSetPO) and (semantic.act > 0) and (semantic.ont_status != "HO"):
                 # infer a new Link for new PO and active semantic.
-                new_Link = dataTypes.Link(most_active_PO.my_made_unit, "nil", semantic, 0.0)
+                new_Link = dataTypes.Link(most_active_PO.my_made_unit, None, None, semantic, 0.0)
                 # update the weight of the Link.
                 new_Link.weight = 1 * (semantic.act - 0) * gamma
                 # connect new Link to semantic and new pred and add Link to memory.Links.
@@ -4499,7 +4513,7 @@ def compression_routine(memory, made_RB, compressed_PO, ho_sem, gamma):
                 memory.semantics.append(ho_sem)
 
             # learn a connection between the new HO semantic and compressed_PO
-            newLink = dataTypes.Link(compressed_PO, "nil", ho_sem, 1.0)
+            newLink = dataTypes.Link(compressed_PO, None, None, ho_sem, 1.0)
             compressed_PO.mySemantics.append(newLink)
             ho_sem.myPOs.append(newLink)
             memory.Links.append(newLink)
@@ -4582,7 +4596,7 @@ def unpacking_routine(memory, made_RBs, currentPO, gamma, tokenize):
                     # if not connected_to_newPO, then learn a connection if semantic.act > 0.
                     if (not connected_to_inferredPO) and (semantic.act > 0):
                         # infer a new Link for new PO and active semantic.
-                        new_Link = dataTypes.Link(inferredPO, "nil", semantic, 0.0)
+                        new_Link = dataTypes.Link(inferredPO, None, None, semantic, 0.0)
                         # update the weight of the Link.
                         new_Link.weight = 1 * (semantic.act - 0) * gamma
                         # connect new Link to semantic and new pred and add Link to memory.Links.
@@ -4617,7 +4631,7 @@ def unpacking_routine(memory, made_RBs, currentPO, gamma, tokenize):
 
                         if (not connected_to_inferredPO) and (semantic.act > 0):
                             # infer a new Link for new PO and active semantic.
-                            new_Link = dataTypes.Link(inferredPO, "nil", semantic, 0.0)
+                            new_Link = dataTypes.Link(inferredPO, None, None, semantic, 0.0)
                             # update the weight of the Link.
                             new_Link.weight = 1 * (semantic.act - 0) * gamma
                             # connect new Link to semantic and new pred and add Link to memory.Links.
@@ -4977,6 +4991,7 @@ def add_tokens_to_set(memory, token_num, token_type, the_set):
         memory.RBs[token_num].set = the_set
         # add the RB's pred.
         # edited for DEBUGGING.
+        # NOTE: I can't seem to reproduce this error, but I'm leaving this catch in just in case (10/9/25). 
         if len(memory.RBs[token_num].myPred[0].set) < 1:
             pdb.set_trace()
         memory.RBs[token_num].myPred[0].set = the_set
@@ -5045,31 +5060,31 @@ def kludgey_comparitor(PO1, PO2, memory):
                             # run the simple comparitor.
                             if link1.mySemantic.amount > link2.mySemantic.amount:
                                 # connect PO1 to 'more' and PO2 to 'less'.
-                                new_link_more = dataTypes.Link(PO1, None, more, 1.0)
+                                new_link_more = dataTypes.Link(PO1, None, None, more, 1.0)
                                 PO1.mySemantics.append(new_link_more)
                                 more.myPOs.append(new_link_more)
                                 memory.Links.append(new_link_more)
-                                new_link_less = dataTypes.Link(PO2, None, less, 1.0)
+                                new_link_less = dataTypes.Link(PO2, None, None, less, 1.0)
                                 PO2.mySemantics.append(new_link_less)
                                 less.myPOs.append(new_link_less)
                                 memory.Links.append(new_link_less)
                             elif link1.mySemantic.amount < link2.mySemantic.amount:
                                 # connect PO1 to 'less' and PO2 to 'more'.
-                                new_link_less = dataTypes.Link(PO1, None, less, 1.0)
+                                new_link_less = dataTypes.Link(PO1, None, None, less, 1.0)
                                 PO1.mySemantics.append(new_link_less)
                                 less.myPOs.append(new_link_less)
                                 memory.Links.append(new_link_less)
-                                new_link_more = dataTypes.Link(PO2, None, more, 1.0)
+                                new_link_more = dataTypes.Link(PO2, None, None, more, 1.0)
                                 PO2.mySemantics.append(new_link_more)
                                 more.myPOs.append(new_link_more)
                                 memory.Links.append(new_link_more)
                             elif link1.mySemantic.amount == link2.mySemantic.amount:
                                 # they are equal, connect both PO1 and PO2 to 'same'.
-                                new_link_same1 = dataTypes.Link(PO1, None, same, 1.0)
+                                new_link_same1 = dataTypes.Link(PO1, None, None, same, 1.0)
                                 PO1.mySemantics.append(new_link_same1)
                                 same.myPOs.append(new_link_same1)
                                 memory.Links.append(new_link_same1)
-                                new_link_same2 = dataTypes.Link(PO2, None, same, 1.0)
+                                new_link_same2 = dataTypes.Link(PO2, None, None, same, 1.0)
                                 PO2.mySemantics.append(new_link_same2)
                                 same.myPOs.append(new_link_same2)
                                 memory.Links.append(new_link_same2)
@@ -5104,12 +5119,82 @@ def swap_driverRecipient(memory):
     return memory
 
 
-# function to make sure that the .myanalog data in all tokens is consistent.
+# function to make sure that the .myanalog data in all tokens is consistent. NOTE: NOT COMPLETED! 
 def check_analog_consistency(memory):
     # go through each analog and make sure that all tokens in that analog have that analog in their .myanalog field. If yes, fine. Otherwise, ...
 
     # returns.
     return memory
+
+
+# function to collect the activation of all units in the network to a dict (for now). 
+def collect_acts(memory, act_dict):
+    # the act_dict has a key for 'iteration' initialised to 0, and will learn a key for each unit in the network, denoted with the unit's name, that contains an array with the unit type in the first slot, an array that will be filled with activations at each time step that the unit is active (no data is included for time points the unit is not active) in the second slot, and an array that the set that the unit was in when active in the third slot, and an array listing the iteration the activity occurred in the third slot. For example, a set of arrays: [.5, .6, .7], ['driver', 'recipient', 'memory'], [1, 10, 100] indicates the unit had an activation of .5 in the driver on iteration 1, an activation of .6 in the recipient on iteration 10, and an activation of .7 in memory on iteration 100. 
+    # for each semantic. 
+    for semantic in memory.semantics:
+        if semantic.act > 0.01:
+            # check if the semantic is in the dict, and if not, then make it. 
+            if semantic.name not in act_dict:
+                # the semantic isn't in act_dict, so make it. 
+                act_dict[semantic.name] = ['semantic', [], [], []]
+            # add the current activation to the end of the activation array. 
+            act_dict[semantic.name][1].append(semantic.act)
+            # add the current set to the end of the set array. 
+            act_dict[semantic.name][2].append('semantic')
+            # add the current iteration to the end of the location array). 
+            act_dict[semantic.name][2] = [None] * act_dict['iteration']
+    # for each PO. 
+    for myPO in memory.POs:
+        if myPO.act > .01:
+            # check if the PO is in the dict, and if not, then make it. 
+            if myPO.name not in act_dict: 
+                act_dict[myPO.name] = ['PO', [], [], []]
+            # add the current activation to the end of the activation array. 
+            act_dict[myPO.name][1].append(myPO.act)
+            # add the current location to the end of the location array. 
+            act_dict[myPO.name][2].append(myPO.set)
+            # add the current iteration to the end of the location array). 
+            act_dict[myPO.name][3].append(act_dict['iteration'])
+    # for each RB. 
+    for myRB in memory.RBs:
+        if myRB.act > .01: 
+            # check if the RB is in the dict, and if not, then make it. 
+            if myRB.name not in act_dict:
+                act_dict[myRB.name] = ['RB', [], [], []]
+            # add the current activation to the end of the activation array. 
+            act_dict[myRB.name][1].append(myRB.act)
+            # add the current location to the end of the location array. 
+            act_dict[myRB.name][2].append(myRB.set)
+            # add the current iteration to the end of the location array). 
+            act_dict[myRB.name][3].append(act_dict['iteration'])
+    # for each P. 
+    for myP in memory.Ps:
+        if myP.act > .01:
+            # check if the P is in the dict, and if not, then make it. 
+            if myP.name not in act_dict:
+                act_dict[myP.name] = ['P', [], [], []]
+            # add the current activation to the end of the activation array. 
+            act_dict[myP.name][1].append(myP.act)
+            # add the current location to the end of the location array. 
+            act_dict[myP.name][2].append(myP.set)
+            # add the current iteration to the end of the location array). 
+            act_dict[myP.name][3].append(act_dict['iteration'])
+    # for each Group. 
+    # NOTE: empty for now... 
+    # for local inhibitor (the local inhibitor is always there and doesn't change size, so only need to append values).
+    if 'localInhibitor' in act_dict: 
+        act_dict['localInhibitor'][1].append(memory.localInhibitor.act)
+    else: 
+        act_dict['localInhibitor'] = ['localInhibitor', [memory.localInhibitor.act]]
+    # for global inhibitor (the global inhibitor is always there and doesn't change size, so only need to append values). 
+    if 'globalInhibitor' in act_dict: 
+        act_dict['globalInhibitor'][1].append(memory.globalInhibitor.act)
+    else: 
+        act_dict['globalInhibitor'] = ['globalInhibitor', [memory.globalInhibitor.act]]
+    # update the iterabor in act_dict
+    act_dict['iteration'] += 1
+    # returns
+    return act_dict
 
 
 # function to write memory state to a sym file for storage. Takes as arguments the current memory object, and a file_name, which is the name of the file to which the memory state should be written.
@@ -5343,7 +5428,7 @@ def add_category(memory, category):
 
     for cPO in memory.driver.POs:
         if cPO.predOrObj == 0:
-            new_link = dataTypes.Link(cPO, [], new_sem, 1)
+            new_link = dataTypes.Link(cPO, None, None, new_sem, 1)
             memory.Links.append(new_link)
             cPO.mySemantics.append(new_link)
             new_sem.myPOs.append(new_link)
