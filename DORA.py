@@ -356,7 +356,7 @@ class RunMenu(object):
                         with open(write_pickle_name, 'wb') as f:
                             pickle.dump(ctrlStructure.network.act_dict, f)
                         # reset the act_dict. 
-                        ctrlStructure.network.act_dict = reset_act_dict(ctrlStructure.network.act_dict{'iteration'})
+                        ctrlStructure.network.act_dict = reset_act_dict(ctrlStructure.network.act_dict['iteration'])
                 # and update network based on ctrlStructure.memory.
                 self.network = ctrlStructure.network
             else:  # run in user controlled mode.
@@ -1331,7 +1331,7 @@ def swap_driver_recipient(memory):
 
 # function to reset the act_dict to empty. It returns an emptied act_dict structure with current iteration information.  
 def reset_act_dict(iteration):
-    act_dict {'iteration': iteration}
+    act_dict ['iteration': iteration]
     return act_dict
 
 
